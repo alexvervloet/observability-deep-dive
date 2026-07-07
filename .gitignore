@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets — never commit your real keys
+.env
+
+# Generated artifacts (log histories, HTML reports) — regenerate with the simulator
+*.log.jsonl
+report.html
+
+# Editor / local history
+.history/
+.vscode/
