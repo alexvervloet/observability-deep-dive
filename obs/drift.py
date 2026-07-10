@@ -33,6 +33,7 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter
+from collections.abc import Sequence
 
 from obs.logs import LogRecord, by_day
 from obs import providers
@@ -117,7 +118,7 @@ def embedding_drift_by_day(
 
 # --- 3. PSI (Population Stability Index) ------------------------------------
 
-def psi(expected: list[float], actual: list[float], bins: int = 10) -> float:
+def psi(expected: Sequence[float], actual: Sequence[float], bins: int = 10) -> float:
     """Population Stability Index between a baseline ('expected') and current
     ('actual') sample of a numeric quantity.
 
