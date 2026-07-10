@@ -250,7 +250,7 @@ def generate(
             # minority, the *global* p95 barely moves while the cohort's own p95
             # screams — which is the whole lesson of Section 11.
             seg_hit = outage is not None and segment == outage.segment
-            seg_lat_mult = (1.0 + 2.4 * outage.ramp(d)) if seg_hit else 1.0
+            seg_lat_mult = (1.0 + 2.4 * outage.ramp(d)) if (outage is not None and seg_hit) else 1.0
 
             # --- pick a topic and question -------------------------------------
             if drift and rng.random() < drift_frac:
