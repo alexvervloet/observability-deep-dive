@@ -1,4 +1,4 @@
-# The default stack (PROVIDER=mock) needs only python-dotenv — everything else
+# The default stack (PROVIDER=mock) needs only python-dotenv: everything else
 # is the Python standard library. That's deliberate: the whole observability
 # stack runs offline, with no key and almost no dependencies. The traffic
 # simulator, every metric, every drift detector, the alerting, and the capstone
@@ -8,13 +8,13 @@
 python-dotenv>=1.0.0
 
 # --- Provider SDKs (OPTIONAL) ---
-# You only need these if you switch PROVIDER away from the offline mock — e.g. to
+# You only need these if you switch PROVIDER away from the offline mock: e.g. to
 # score a sample of answers with a *real* LLM-as-judge (the quality-drift section)
 # or to compute *real* embeddings for input-drift. Both have deterministic offline
 # mocks, so nothing here is required to complete the repo.
 
-# OpenAI — used when PROVIDER=openai.
+# OpenAI: used when PROVIDER=openai.
 openai>=1.30.0
 
-# Anthropic — used when PROVIDER=claude.
+# Anthropic: used when PROVIDER=claude.
 anthropic>=0.111.0
