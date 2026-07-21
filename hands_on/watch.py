@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-watch.py — the capstone: monitor six weeks of traffic and catch the incidents.
-==============================================================================
+watch.py: the capstone: monitor six weeks of traffic and catch the incidents.
 
 Everything in the repo comes together here. `watch.py` ingests the whole
 generated log history, computes the daily metric series, runs the tuned detector
 suite (latency spike + regression, input drift, cost creep, quality drop), and
 prints an operations dashboard: current health vs baseline, a sparkline per
-metric, an incident timeline of what fired when, and — the honest payoff — a
+metric, an incident timeline of what fired when, and, the honest payoff, a
 **detection report** that grades the detectors against the ground-truth incidents
 the simulator buried in the history: did we catch each one, and how many days
 late?
@@ -117,7 +116,7 @@ def print_dashboard(records, rows, incidents, fired, baseline_days):
     days = [r["day"] for r in rows]
     total_cost = sum(r["cost_usd_total"] for r in rows)
     total_req = sum(r["requests"] for r in rows)
-    print(_c("\n══ Acme Cloud support — observability dashboard ═══════════════════", "1"))
+    print(_c("\n══ Acme Cloud support: observability dashboard ═══════════════════", "1"))
     print(f"provider={providers.describe()}")
     print(f"window: {days[0]} → {days[-1]}  ({len(days)} days)   "
           f"requests: {total_req:,}   spend: ${total_cost:.4f}   "
@@ -150,7 +149,7 @@ def print_dashboard(records, rows, incidents, fired, baseline_days):
     # --- incident timeline --------------------------------------------------
     print(_c("\nINCIDENT TIMELINE  (alerts fired)", "1"))
     if not fired:
-        print("  (no alerts — all clear)")
+        print("  (no alerts, all clear)")
     for a in fired:
         _, color, icon = status_of(a["z"])
         print(f"  {_c(icon, color)} {a['fired_on']}  {a['label']:<20}"
@@ -178,7 +177,7 @@ def print_dashboard(records, rows, incidents, fired, baseline_days):
     top = mining.cluster(fails, records, top=1)
     print(_c("\nTOP FAILURE CLUSTER TO FIX  (mine → eval → fix)", "1"))
     if top:
-        print(f"  {top[0]['count']}× “{top[0]['term']}”  e.g. {top[0]['examples'][0]}")
+        print(f"  {top[0]['count']}× \"{top[0]['term']}\"  e.g. {top[0]['examples'][0]}")
         print("  → turn into eval cases with examples/06_mining_traffic.py")
     print()
 
