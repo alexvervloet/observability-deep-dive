@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
 """
-03_input_drift.py — the questions changed, and nothing errored.
-===============================================================
+03_input_drift.py: the questions changed, and nothing errored.
 
     python examples/03_input_drift.py            # offline (mock embeddings)
 
 The most dangerous failure in a deployed LLM app is the one that doesn't throw:
 users gradually start asking things your system was never good at. No exception,
-no latency bump — the model just answers questions it shouldn't, and quality rots
+no latency bump. The model just answers questions it shouldn't, and quality rots
 while every ops dashboard stays green. In this history, users start asking about a
 mobile app the knowledge base has no answer for, beginning around day 14.
 
 Three lenses, cheapest first (obs/drift.py):
 
-  1. **Novel-term rate** — share of questions using words the baseline barely saw.
+  1. **Novel-term rate**: share of questions using words the baseline barely saw.
      Pure string counting, no model. The earliest, cheapest smoke alarm.
-  2. **Embedding drift** — how far each day's questions sit, on average, from the
+  2. **Embedding drift**: how far each day's questions sit, on average, from the
      baseline's center of mass *in meaning*. Catches drift even in ordinary words.
-  3. **PSI** — the classic MLOps statistic for "how much did this distribution
+  3. **PSI**: the classic MLOps statistic for "how much did this distribution
      move?", here on question length. You'll meet PSI everywhere (Section 7).
 
 Uses the offline mock embeddings (words hashed to stable vectors), so it runs with
-no key. Flip PROVIDER=openai to measure drift with real embeddings — the numbers
+no key. Flip PROVIDER=openai to measure drift with real embeddings; the numbers
 change, the story doesn't.
 """
 
@@ -64,7 +63,7 @@ print(f"\nPSI(question length, baseline vs final week) = {psi}")
 print("  rule of thumb:  <0.1 stable · 0.1–0.25 moderate shift · >0.25 major shift")
 
 print("\nAll three light up in the back half: new words, questions drifting away in")
-print("meaning, a shifted length distribution — the mobile-app questions arriving.")
+print("meaning, a shifted length distribution: the mobile-app questions arriving.")
 print("This is the same event Section 6 sees from the other side, as a cluster of")
 print("failures worth turning into eval cases. Next, the subtler cousin: the inputs")
 print("stay the same but the *answers* get worse.")

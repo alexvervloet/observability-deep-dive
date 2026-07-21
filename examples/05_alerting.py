@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-05_alerting.py — page me for incidents, not for Tuesdays.
-=========================================================
+05_alerting.py: page me for incidents, not for Tuesdays.
 
     python examples/05_alerting.py            # offline, no key
 
@@ -11,7 +10,7 @@ alert fails both ways at once. Watch what a static threshold does here:
     "page if p95 > 300ms"  →  fires almost every day, because normal p95 is ~400ms.
 
 That's alert fatigue: you mute it, and the muted alert is the one that misses the
-real outage. The fix is three ideas from obs/alerts.py — a **baseline z-score** (so
+real outage. The fix is three ideas from obs/alerts.py: a **baseline z-score** (so
 "weird" is relative, not a magic constant), a **direction**, and **persistence**
 (require the breach to hold N days). Persistence is the dial that tells a one-day
 spike apart from a real regression.
@@ -36,18 +35,18 @@ for row, j in zip(rows, judge.judge_by_day(records, per_day=20)):
 
 # --- 1. Why a static threshold is a trap -----------------------------------
 naive = sum(1 for r in rows if r["p95_latency_ms"] > 300)
-print(f"Naive rule 'p95 > 300ms' would fire on {naive}/{len(rows)} days — "
+print(f"Naive rule 'p95 > 300ms' would fire on {naive}/{len(rows)} days, "
       f"mostly normal ones.\nThat's alert fatigue. Now the z-score + persistence version:\n")
 
 # --- 2. The persistence tradeoff on one metric -----------------------------
-print("Latency: same z-threshold (3σ), different persistence —")
+print("Latency: same z-threshold (3σ), different persistence:")
 for p in (1, 2, 3):
     det = alerts.Detector("p95_latency_ms", "up", z_threshold=3, persistence=p)
     fired = alerts.detect(rows, det)
     days = ", ".join(a["fired_on"] for a in fired) or "(none)"
     print(f"  persistence={p}: {len(fired)} alert(s) → {days}")
 print("  persistence=1 catches the 1-day spike; persistence=3 rides over it and")
-print("  only fires on sustained trends. Neither is 'correct' — it's the tradeoff.\n")
+print("  only fires on sustained trends. Neither is 'correct'; it's the tradeoff.\n")
 
 # --- 3. A sensible detector per metric -------------------------------------
 detectors = [
@@ -68,6 +67,6 @@ print("\nCompare each 'breach began' to when the incident really started:")
 for inc in incidents:
     print(f"  {inc.kind:<20} truly started day {inc.start_day} "
           f"({inc.metric})")
-print("\nThe latency *regression* detector stays silent — correctly, because the")
+print("\nThe latency *regression* detector stays silent, correctly, because the")
 print("spike was transient. Detection lag (breach-began vs alert-fired) is the price")
 print("persistence charges for not paging on noise. That's monitoring, honestly.")

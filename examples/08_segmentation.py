@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 """
-08_segmentation.py — the global average lies; slice by cohort.
-==============================================================
+08_segmentation.py: the global average lies; slice by cohort.
 
     python examples/08_segmentation.py            # offline, no key
 
 Every metric so far has been computed over *all* traffic. That's exactly how you
 miss the most common production incident there is: a problem concentrated in one
-**segment** — a single plan, region, language, or prompt version — that a global
+**segment**, a single plan, region, language, or prompt version, that a global
 average dilutes into invisibility. Here one cohort's backend is mis-provisioned
 and their requests slow to a crawl starting around day 21. That cohort
 ("enterprise") is only 15% of traffic, so:
 
-  • the **global** p95 latency detector stays silent — the overall number looks fine
+  • the **global** p95 latency detector stays silent; the overall number looks fine
   • the **enterprise** p95, computed on its own, screams
 
 The fix is one line of discipline: `metrics.daily_by_segment` computes the same
 series *per cohort*, and you run the same detectors on each. One honest wrinkle
 the example makes concrete: small cohorts have fewer requests per day, so their
-metrics are noisier — you either loosen the detector (shorter persistence here) or
+metrics are noisier, so you either loosen the detector (shorter persistence here) or
 widen the window. Monitoring per segment is not free, but it's how you catch the
 incident that's someone's entire experience.
 """
@@ -65,13 +64,13 @@ for seg, seg_rows in by_seg.items():
     base = sum(zr["value"] for zr in z[:7]) / 7
     window = sum(zr["value"] for zr in z[21:31]) / 10
     peak = max(zr["z"] for zr in z[7:])
-    verdict = "🔥 ALERT — on fire" if fired else "ok"
+    verdict = "ALERT: on fire" if fired else "ok"
     print(f"  {seg:<12}{share:>8.0%}{base:>9.0f}ms{window:>8.0f}ms{peak:>8.1f}   {verdict}")
 
 print(f"\nThe outage was in one cohort ({outage.segment}, ~15% of traffic). Globally it")
 print("hid inside normal p95 noise and fired nothing; sliced by segment it's obvious")
-print("and localized — you know exactly whose backend to fix. This is why an aggregate")
+print("and localized: you know exactly whose backend to fix. This is why an aggregate")
 print("dashboard is necessary but not sufficient: always be able to group by tenant,")
-print("plan, region, and prompt version. The catch is cost and noise — more segments")
+print("plan, region, and prompt version. The catch is cost and noise: more segments")
 print("means more series to watch and smaller samples per series, so you slice on the")
 print("dimensions that actually carry different risk, not every field you log.")

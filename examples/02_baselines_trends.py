@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-02_baselines_trends.py — a number is meaningless without a baseline.
-====================================================================
+02_baselines_trends.py: a number is meaningless without a baseline.
 
     python examples/02_baselines_trends.py            # offline, no key
 
 "Cost per request is $0.00006" tells you nothing. "$0.00006, up from a baseline of
-$0.00003 — that's +5.4σ" is an incident. The move from the first sentence to the
+$0.00003, that's +5.4σ" is an incident. The move from the first sentence to the
 second is the whole idea of monitoring: learn what *normal* looked like from a
 clean baseline window, then measure every new day in standard deviations from it.
 
 A **z-score** does exactly that: (today − baseline mean) / baseline spread. It's
 unitless, so the same "3σ is weird" rule works for latency, cost, and refusals
-alike — you don't need a hand-tuned threshold per metric.
+alike, so you don't need a hand-tuned threshold per metric.
 
 Here we take the first 7 days as the baseline and print the z-score trend for cost
 per request. Watch it sit near zero through the healthy period, then climb once the
@@ -44,10 +43,10 @@ for i, zr in enumerate(z[::3]):
     tag = "  ← baseline" if i * 3 < BASELINE_DAYS else ""
     print(f"{zr['day']:<11}{zr['value']*1e6:>8.1f}µ{zr['z']:>8.1f}   {bar}{tag}")
 
-print("\nThe z-score is flat through the healthy weeks, then climbs steadily — that")
+print("\nThe z-score is flat through the healthy weeks, then climbs steadily. That")
 print("steadiness is the tell of a real regression rather than a noisy day. But a")
 print("rising z alone still isn't an alert: you have to decide *how high, for how")
-print("long* before you page someone. That decision — and its unavoidable tradeoff")
-print("between false alarms and detection lag — is Section 5.")
+print("long* before you page someone. That decision, and its unavoidable tradeoff")
+print("between false alarms and detection lag, is Section 5.")
 print("\nFirst, two kinds of regression this cost trend can't see: the questions")
 print("changing (Section 3) and the answers getting worse (Section 4).")
