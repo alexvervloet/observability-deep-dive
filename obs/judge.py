@@ -1,17 +1,16 @@
 """
-obs/judge.py — score a *sample* of answers, because you can't grade them all.
-=============================================================================
+obs/judge.py: score a *sample* of answers, because you can't grade them all.
 
-Latency and cost are free to measure — they're already in the log. **Quality
+Latency and cost are free to measure; they're already in the log. **Quality
 isn't.** The only ways to know if answers are getting worse are to ask a human
-(slow, expensive) or ask a model (an LLM-as-judge, from the Evals dive — cheap per
+(slow, expensive) or ask a model (an LLM-as-judge, from the Evals dive: cheap per
 call, but not free). Either way you cannot afford to grade every request, so
 production quality monitoring is inherently a **sampling** problem:
 
   1. Take a representative sample of answers per window (per day, here).
   2. Score each with a judge (the mock's rule-based scorer offline, or a real LLM).
   3. Aggregate to a mean **with a confidence interval**, because a mean over 20
-     sampled answers is a point estimate — a drop from 0.82 to 0.78 might be noise.
+     sampled answers is a point estimate; a drop from 0.82 to 0.78 might be noise.
 
 That last point is the whole discipline, straight from the Evals dive: report the
 uncertainty, and don't declare a quality regression that sits inside it. This is
@@ -43,7 +42,7 @@ def mean_ci(values: list[float], z: float = 1.96) -> tuple[float, float]:
 
 def _judgeable(records: list[LogRecord]) -> list[LogRecord]:
     """Answers worth scoring: an actual attempted answer (skip refusals, empties,
-    errors). We deliberately do NOT judge refusals — refusal *rate* is already its
+    errors). We deliberately do NOT judge refusals; refusal *rate* is already its
     own metric, and mixing it in would make a judge-score drop un-attributable
     (was the model worse, or just refusing more?). Judging only attempted answers
     keeps this metric about the quality of the answers you did give."""
@@ -58,7 +57,7 @@ def judge_by_day(
     seed: int = 0,
 ) -> list[dict]:
     """Score a per-day sample of answers and return rows:
-    {day, judge_score, margin, n}. `per_day` is your sampling budget — bigger costs
+    {day, judge_score, margin, n}. `per_day` is your sampling budget; bigger costs
     more (real judge calls) but shrinks the margin. Sampling is seeded, so a run is
     reproducible."""
     rows = []

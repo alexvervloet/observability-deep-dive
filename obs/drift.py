@@ -1,30 +1,29 @@
 """
-obs/drift.py — detect when the *inputs* stop looking like they used to.
-=======================================================================
+obs/drift.py: detect when the *inputs* stop looking like they used to.
 
 Your eval passed on launch day against the questions you had then. Six weeks
 later, are users still asking those questions? **Input drift** is the shift in the
-distribution of what comes in — and it's dangerous precisely because nothing
+distribution of what comes in, and it's dangerous precisely because nothing
 errors. The model dutifully answers questions it was never good at; your latency
 and error dashboards stay green while the answers quietly get worse.
 
 Three ways to see it, cheapest first:
 
-  1. **Novel-term rate** — the fraction of questions using words that barely
+  1. **Novel-term rate**: the fraction of questions using words that barely
      appeared in your baseline period. Pure string counting, no model. A cheap
      early warning that the *vocabulary* changed.
 
-  2. **Embedding drift** — embed each question and measure how far the day's
+  2. **Embedding drift**: embed each question and measure how far the day's
      questions sit, on average, from the baseline period's center of mass. This
      catches drift in *meaning* even when the words are ordinary. Needs an
      embedding function (the mock's hashed vectors work offline).
 
-  3. **PSI (Population Stability Index)** — the classic MLOps statistic for "how
+  3. **PSI (Population Stability Index)**: the classic MLOps statistic for "how
      much did this distribution move?", here applied to any numeric signal (answer
      length, a similarity score). We implement it once, honestly, because you'll
-     meet it everywhere — and reuse it in the classic-MLOps sidebar.
+     meet it everywhere, and reuse it in the classic-MLOps sidebar.
 
-None of these tells you drift is *bad* — only that it happened. Deciding whether a
+None of these tells you drift is *bad*, only that it happened. Deciding whether a
 shift matters is a judgment call the alerting layer frames, not a number.
 """
 
@@ -76,7 +75,7 @@ def cosine(a: list[float], b: list[float]) -> float:
 
 
 def centroid(vectors: list[list[float]]) -> list[float]:
-    """The mean vector — the 'center of mass' of a set of questions."""
+    """The mean vector: the 'center of mass' of a set of questions."""
     if not vectors:
         return []
     dim = len(vectors[0])
@@ -101,7 +100,7 @@ def embedding_drift_by_day(
     """For each day, the mean embedding distance of that day's questions from the
     baseline period's centroid. Returns rows: {day, drift, requests}.
 
-    The baseline is the first `baseline_days` days — 'what normal looked like'. Days
+    The baseline is the first `baseline_days` days, 'what normal looked like'. Days
     after it are scored against that fixed center, so a rising `drift` means today's
     questions no longer resemble the ones you launched on.
     """

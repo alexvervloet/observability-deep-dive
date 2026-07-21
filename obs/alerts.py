@@ -1,11 +1,10 @@
 """
-obs/alerts.py — turn a metric time series into alerts, without paging on noise.
-===============================================================================
+obs/alerts.py: turn a metric time series into alerts, without paging on noise.
 
-A dashboard nobody is staring at is useless — the point of monitoring is to be
+A dashboard nobody is staring at is useless; the point of monitoring is to be
 *told* when something breaks. But the naive version ("page me if p95 > 300ms")
 fails both ways at once: too tight and you get woken at 3am by normal daily
-wobble until you mute the alert (alert fatigue — the muted alert is the one that
+wobble until you mute the alert (alert fatigue, and the muted alert is the one that
 misses the real outage); too loose and you sleep through the incident.
 
 This module builds a more honest detector from three ideas:
@@ -19,7 +18,7 @@ This module builds a more honest detector from three ideas:
 
   - **Persistence (hysteresis).** Require the breach to hold for N consecutive days
     before paging. This is the dial that separates a **transient spike** (one bad
-    day — worth a look, not a 3am page) from a **sustained regression** (the drift
+    day, worth a look but not a 3am page) from a **sustained regression** (the drift
     that actually costs you). Set persistence=1 to catch spikes, 3 to catch trends.
 
 The honest tradeoff lives in those two knobs, `z_threshold` and `persistence`:
@@ -63,7 +62,7 @@ def _median(values: list[float]) -> float:
 
 
 def ewma(values: list[float], alpha: float = 0.3) -> list[float]:
-    """Exponentially weighted moving average — a smoother that reacts to a
+    """Exponentially weighted moving average: a smoother that reacts to a
     sustained shift but rides over single-day spikes. An alternative to persistence
     for suppressing noise; shown alongside it in the alerting example."""
     out: list[float] = []
@@ -78,12 +77,12 @@ def ewma(values: list[float], alpha: float = 0.3) -> list[float]:
 class Detector:
     """A rule that watches one metric.
 
-    metric       — the key in each daily row to watch (e.g. "p95_latency_ms").
-    direction    — "up" if a rising value is bad, "down" if a falling value is bad.
-    z_threshold  — how many baseline std-devs past normal counts as a breach.
-    persistence  — consecutive breach days required before it fires (1 = spike).
-    baseline_days— how many leading days define 'normal' (must be a clean window).
-    robust       — use median/MAD for the baseline instead of mean/stdev.
+    metric       the key in each daily row to watch (e.g. "p95_latency_ms").
+    direction    "up" if a rising value is bad, "down" if a falling value is bad.
+    z_threshold  how many baseline std-devs past normal counts as a breach.
+    persistence  consecutive breach days required before it fires (1 = spike).
+    baseline_days how many leading days define 'normal' (must be a clean window).
+    robust       use median/MAD for the baseline instead of mean/stdev.
     """
 
     metric: str
@@ -110,7 +109,7 @@ def detect(rows: list[dict], detector: Detector) -> list[dict]:
     """Run a detector over the daily rows and return one alert per breach *run*.
 
     An alert fires on the day a run of `persistence` consecutive breaches
-    completes — so a single bad day never trips a persistence=3 trend detector, and
+    completes, so a single bad day never trips a persistence=3 trend detector, and
     the alert carries the detection day (for measuring how fast you caught it).
     We never re-fire within the same contiguous breach run.
     """

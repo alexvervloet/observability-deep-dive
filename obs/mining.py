@@ -1,19 +1,18 @@
 """
-obs/mining.py — production traffic is your best eval set.
-=========================================================
+obs/mining.py: production traffic is your best eval set.
 
 The Evals dive made the point that the best test cases come from real failures
 you find later and add back so they never regress. Monitoring is where you *find*
 them. Every refusal, every thumbs-down, every terse answer is a labelled example
-of something your system got wrong — and it arrived for free, from a real user,
+of something your system got wrong, and it arrived for free, from a real user,
 which is worth more than any case you'd invent.
 
 This module closes the loop (the "feedback flywheel"):
 
-  1. **Surface** the failures — refusals, negative feedback, suspiciously short
-     answers — out of the traffic.
+  1. **Surface** the failures (refusals, negative feedback, suspiciously short
+     answers) out of the traffic.
   2. **Cluster** them by what they're about, so "47 scattered failures" becomes
-     "31 of them are the mobile app you don't support" — a fixable finding, and
+     "31 of them are the mobile app you don't support": a fixable finding, and
      the exact signal input-drift detection saw from the other side.
   3. **Emit** them as candidate eval cases in the Evals dive's JSONL shape, ready
      for a human to write the gold answer and drop into the regression suite.
@@ -36,7 +35,7 @@ _STOPWORDS = {
 
 
 def salient_terms(question: str) -> list[str]:
-    """Content words of a question, stopwords removed — the 'aboutness' tokens we
+    """Content words of a question, stopwords removed: the 'aboutness' tokens we
     cluster on."""
     words = "".join(c.lower() if c.isalnum() or c.isspace() else " " for c in question).split()
     return [w for w in words if w not in _STOPWORDS and len(w) > 2]
@@ -64,7 +63,7 @@ def cluster(failing: list[LogRecord], all_records: list[LogRecord], top: int = 5
     on the word most *over-represented among failures* (a word whose uses are mostly
     failing), not just its first content word. That pushes distinctive topic words
     ("app", "iphone") to the top over generic verbs ("enable", "get") that appear
-    everywhere — so a real theme like the unsupported mobile app surfaces instead of
+    everywhere, so a real theme like the unsupported mobile app surfaces instead of
     fragmenting. Enough to turn a pile of failures into a ranked list of what to fix.
     """
     fail_tf: Counter[str] = Counter()
@@ -90,7 +89,7 @@ def cluster(failing: list[LogRecord], all_records: list[LogRecord], top: int = 5
 
 def gold_candidates(records: list[LogRecord], limit: int = 10) -> list[dict]:
     """Turn failing requests into candidate eval cases in the Evals dive's JSONL
-    shape: {input, expected, note}. `expected` is left blank on purpose — a human
+    shape: {input, expected, note}. `expected` is left blank on purpose; a human
     writes the right answer; the machine only found the question worth asking."""
     seen: set[str] = set()
     cases = []
@@ -108,6 +107,6 @@ def gold_candidates(records: list[LogRecord], limit: int = 10) -> list[dict]:
 
 
 def unrated_but_failing(records: list[LogRecord]) -> int:
-    """How many failures had NO user feedback at all — a reminder that thumbs are
+    """How many failures had NO user feedback at all: a reminder that thumbs are
     sparse, so you can't wait for them: most failures are silent."""
     return sum(1 for r in failures(records) if r.feedback is None)

@@ -1,6 +1,5 @@
 """
-obs/metrics.py — turn a pile of log records into the numbers you watch.
-=======================================================================
+obs/metrics.py: turn a pile of log records into the numbers you watch.
 
 A log file is data; a *metric* is a decision aid. This module reduces a batch of
 `LogRecord`s to the dozen or so numbers an on-call engineer actually looks at:
@@ -19,7 +18,7 @@ Two ideas worth internalizing here:
     So the core function computes metrics for *one* window, and you call it per day
     (see `daily`) to get the time series everything else consumes.
 
-Pure standard library, pure arithmetic — no model, no key, no network.
+Pure standard library, pure arithmetic. No model, no key, no network.
 """
 
 from __future__ import annotations
@@ -62,14 +61,14 @@ def window_metrics(records: list[LogRecord]) -> dict:
         "refusal_rate": round(sum(r.outcome == "refused" for r in records) / n, 4),
         "cache_hit_rate": round(sum(r.cache == "hit" for r in records) / n, 4),
         "cost_usd_total": round(sum(r.cost_usd for r in records), 6),
-        # Cost per request counts only paid (cache-miss) calls — the number that
+        # Cost per request counts only paid (cache-miss) calls: the number that
         # moves when the prompt bloats, undiluted by free cache hits.
         "cost_per_request_usd": round(
             sum(r.cost_usd for r in misses) / len(misses), 8) if misses else 0.0,
         "avg_total_tokens": round(sum(r.total_tokens for r in misses) / len(misses), 1) if misses else 0.0,
         "avg_answer_chars": round(sum(r.answer_chars for r in records) / n, 1),
         # Feedback is sparse, so report both the rate AND how many ratings it's from
-        # — a -100% neg rate off 2 ratings is noise, not a fire.
+        # A -100% neg rate off 2 ratings is noise, not a fire.
         "feedback_count": len(rated),
         "neg_feedback_rate": round(sum(r.feedback == -1 for r in rated) / len(rated), 4) if rated else 0.0,
     }

@@ -1,36 +1,35 @@
 """
-obs/simulate.py — the traffic generator that makes this repo runnable offline.
-==============================================================================
+obs/simulate.py: the traffic generator that makes this repo runnable offline.
 
 The Production deep dive shipped a mock *model* so you could operate one request
 with no key. This repo needs something different: **history**. You can't learn to
-spot drift in one request — you need weeks of them, with real incidents buried
+spot drift in one request; you need weeks of them, with real incidents buried
 inside. So instead of a live model, this repo ships a deterministic generator of
 *log history* for the Acme Cloud support assistant.
 
 `generate()` returns two things:
 
-  1. `records` — a list of `LogRecord`s: realistic, request-by-request telemetry,
+  1. `records`: a list of `LogRecord`s, realistic request-by-request telemetry,
      containing only what a running app actually logs (no ground-truth "good?"
-     label — see obs/logs.py).
-  2. `incidents` — the *ground truth* of what was wrong and when. A real system
+     label; see obs/logs.py).
+  2. `incidents`: the *ground truth* of what was wrong and when. A real system
      never has this; we do, only so the examples can grade a detector ("you
-     flagged input drift on day 16; it actually started on day 14 — 2-day lag").
+     flagged input drift on day 16; it actually started on day 14, a 2-day lag").
 
 The incidents are injected by genuinely changing the generated traffic, never by
 writing a hidden flag into the logs:
 
-  - **input drift** — users start asking about the mobile app (a topic the KB has
+  - **input drift**: users start asking about the mobile app (a topic the KB has
     no answer for), so out-of-KB refusals rise and the questions' *wording* moves.
-  - **quality regression** — a silent provider model swap makes answers terser and
+  - **quality regression**: a silent provider model swap makes answers terser and
     more evasive. The `model` string never changes; you infer the drop from
     behavior (refusals up, answers shorter, judge scores down).
-  - **cost creep** — someone stuffs more context into the prompt, so prompt tokens
+  - **cost creep**: someone stuffs more context into the prompt, so prompt tokens
     (and the bill, and latency) climb without any user-visible change.
-  - **latency spike** — a short, transient slowdown, to contrast a one-day blip
+  - **latency spike**: a short, transient slowdown, to contrast a one-day blip
     against a sustained regression (you alert on them differently).
 
-Everything is seeded, so the same call always yields the same history — which is
+Everything is seeded, so the same call always yields the same history, which is
 exactly what lets an exercise say "the alert fires on day 16" and be right.
 """
 
@@ -42,7 +41,7 @@ from datetime import datetime, timedelta, timezone
 
 from obs.logs import LogRecord
 
-# USD per 1M tokens (input, output) — the gpt-4o-mini rate, same as the Production
+# USD per 1M tokens (input, output): the gpt-4o-mini rate, same as the Production
 # dive prices its mock at, so the dollar figures look like a real small model.
 _PRICE_IN, _PRICE_OUT = 0.15, 0.60
 _MODEL = "acme-support-1"  # the "model" name in the logs; stays fixed even across a silent swap
@@ -140,7 +139,7 @@ _DRIFT_QUESTIONS = [
 ]
 
 # The customer cohorts every request belongs to, and their share of traffic. A
-# segment-scoped incident (segment_outage) hits only one of these — and because the
+# segment-scoped incident (segment_outage) hits only one of these: and because the
 # affected cohort is a minority, it can stay hidden in the global average.
 _SEGMENTS = [("free", 0.55), ("pro", 0.30), ("enterprise", 0.15)]
 
@@ -149,7 +148,7 @@ _REFUSALS = [
     "I'm not sure about that one — I'd recommend reaching out to support@acme.example for help.",
 ]
 # Degraded answers during a quality regression: technically on-topic, but terse and
-# unhelpful — the shape a weaker model regresses toward.
+# unhelpful: the shape a weaker model regresses toward.
 _DEGRADED = [
     "Check your account settings.",
     "That should be in the settings somewhere.",
@@ -173,7 +172,7 @@ class Incident:
         return self.start_day <= day_index <= self.end_day
 
     def ramp(self, day_index: int) -> float:
-        """0..1 severity — incidents ramp in over ~a week, not switch on instantly,
+        """0..1 severity. Incidents ramp in over ~a week, not switch on instantly,
         which is what makes them hard to catch early."""
         if not self.active_on(day_index):
             return 0.0
@@ -186,7 +185,7 @@ def default_incidents() -> list[Incident]:
     for the default 42-day history."""
     return [
         Incident("latency_spike", 9, 9, "p95_latency_ms",
-                 "One-day provider slowdown (transient — should NOT page as a trend)."),
+                 "One-day provider slowdown (transient; should NOT page as a trend)."),
         Incident("input_drift", 14, 41, "refusal_rate",
                  "Users start asking about a mobile app the KB can't answer."),
         Incident("cost_creep", 21, 41, "cost_per_request_usd",
@@ -248,7 +247,7 @@ def generate(
             # A segment-scoped outage: only the affected cohort's requests slow down
             # (a mis-provisioned backend for that plan). Because the cohort is a
             # minority, the *global* p95 barely moves while the cohort's own p95
-            # screams — which is the whole lesson of Section 11.
+            # screams, which is the whole lesson of Section 11.
             seg_hit = outage is not None and segment == outage.segment
             seg_lat_mult = (1.0 + 2.4 * outage.ramp(d)) if (outage is not None and seg_hit) else 1.0
 
@@ -325,7 +324,7 @@ def _record(ts, trace_id, question, answer, *, outcome, cache, prompt_tokens, la
 
 def _maybe_feedback(rec: LogRecord, *, good: bool, rng: random.Random) -> LogRecord:
     """Sparse, noisy thumbs. Most requests get none; when they do, it correlates
-    with quality but isn't a clean label — exactly like real feedback."""
+    with quality but isn't a clean label, exactly like real feedback."""
     if rng.random() < 0.08:  # only ~8% of users ever rate
         if good:
             rec.feedback = 1 if rng.random() < 0.85 else -1

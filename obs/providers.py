@@ -1,10 +1,9 @@
 """
-obs/providers.py — the ONLY provider-specific seam.
-===================================================
+obs/providers.py: the ONLY provider-specific seam.
 
 Same keystone idea as every sibling repo: hide the one provider-specific call
 behind a tiny function so the rest of the code is provider-agnostic. This repo
-barely needs a live model at all — its whole job is analyzing *logs* — so the
+barely needs a live model at all, since its whole job is analyzing *logs*, so the
 seam here is small. Two capabilities live behind it:
 
   embed(text)              -> a vector, for measuring input drift by *meaning*
@@ -20,7 +19,7 @@ Three stacks, exactly like the siblings:
   PROVIDER=claude ->  claude-haiku-4-5 judge (embeddings still use OPENAI_API_KEY)
 
 Nothing in the core path (reading logs, metrics, baselines, alerting, the
-dashboard) touches this file. Only the two optional model-backed sections do —
+dashboard) touches this file. Only the two optional model-backed sections do 
 and both work fully on the mock.
 """
 
@@ -64,7 +63,7 @@ def _warn_mock_fallback(p: str) -> None:
     _warned_fallback = True
     missing = ", ".join(_KEYS.get(p, []))
     print(
-        f"\n⚠  PROVIDER={p} is set, but {missing} isn't on the environment — did you\n"
+        f"\n⚠  PROVIDER={p} is set, but {missing} isn't on the environment. Did you\n"
         f"   forget `secrun`? Falling back to the offline mock so this still runs.\n"
         f"   Real model:  secrun python <script>   |   Hard error instead:  PROVIDER_STRICT=1\n",
         file=sys.stderr,
@@ -73,7 +72,7 @@ def _warn_mock_fallback(p: str) -> None:
 
 def provider_name() -> str:
     """The active stack. If a real provider is selected but its key isn't on the
-    environment, degrade to the offline mock — loudly, once — unless
+    environment, degrade to the offline mock, loudly and once, unless
     PROVIDER_STRICT=1, which makes the missing key a hard error instead."""
     p = _configured_provider()
     if p in _KEYS and p != "mock" and not _has_required_keys(p):
@@ -90,7 +89,7 @@ def describe() -> str:
     if p == "mock" and configured != "mock":
         return (
             f"mock  (FALLBACK: PROVIDER={configured} is set but its key isn't on the "
-            f"environment — run under `secrun` for the real model)"
+            f"environment; run under `secrun` for the real model)"
         )
     if p == "mock":
         return "mock  (offline, deterministic embeddings + rule-based judge, no key)"
@@ -104,7 +103,7 @@ def describe() -> str:
 def ensure_ready() -> None:
     """Fail fast with a friendly message if a real stack is missing its key.
 
-    For PROVIDER=mock this never fails — that's the point.
+    For PROVIDER=mock this never fails; that's the point.
     """
     p = provider_name()
     if p not in _KEYS:
@@ -119,13 +118,13 @@ def ensure_ready() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Mock embeddings — deterministic, hash-based, offline
+# Mock embeddings: deterministic, hash-based, offline
 # ---------------------------------------------------------------------------
 # The trick: give every word a fixed pseudo-random unit vector (seeded by a hash
 # of the word), then embed a text as the normalized sum of its word vectors. Two
 # questions that share words land near each other; a question full of NEW words
 # (a topic the app has never seen) lands far from the baseline cloud. That is
-# exactly the signal input-drift detection looks for — and here it's real, not
+# exactly the signal input-drift detection looks for: and here it's real, not
 # faked: the vectors move because the words did.
 
 _EMBED_DIM = 64
@@ -158,7 +157,7 @@ def _mock_embed(text: str) -> list[float]:
 # A transparent rule-based stand-in for an LLM-as-judge. It rewards concrete,
 # grounded help (steps, specific settings paths, numbers) and penalizes the
 # hallmarks of a degraded answer (a bare refusal, empty text). It's crude on
-# purpose — the point is that when the answers genuinely get worse (Section 5's
+# purpose: the point is that when the answers genuinely get worse (Section 5's
 # injected quality regression makes them shorter and more evasive), a cheap proxy
 # *sees* it. A real deployment swaps this for a real model via the same function.
 
