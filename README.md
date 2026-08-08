@@ -76,7 +76,7 @@ and no cost. Pick your stack with `PROVIDER` in `.env`:
 | `PROVIDER` | What it changes | Keys needed | Cost |
 |------------|-----------------|-------------|------|
 | `mock` (default) | hashed embeddings + rule-based judge | **none** | **$0** |
-| `openai` | real embeddings + `gpt-4o-mini` judge | `OPENAI_API_KEY` | tiny |
+| `openai` | real embeddings + `gpt-5.4-nano` judge | `OPENAI_API_KEY` | tiny |
 | `claude` | `claude-haiku-4-5` judge (+ OpenAI embeddings) | `ANTHROPIC_API_KEY` (+ `OPENAI_API_KEY`) | tiny |
 
 The provider only matters for two optional, model-backed sections (the sampled

@@ -15,7 +15,7 @@ Three stacks, exactly like the siblings:
                       words (same words -> similar vectors), and the "judge" is a
                       transparent rule-based scorer. No key, no network, no cost.
                       This is what makes the entire repo runnable offline.
-  PROVIDER=openai ->  real embeddings (text-embedding-3-small) + gpt-4o-mini judge
+  PROVIDER=openai ->  real embeddings (text-embedding-3-small) + gpt-5.4-nano judge
   PROVIDER=claude ->  claude-haiku-4-5 judge (embeddings still use OPENAI_API_KEY)
 
 Nothing in the core path (reading logs, metrics, baselines, alerting, the
@@ -32,7 +32,7 @@ import re
 import sys
 from functools import lru_cache
 
-_OPENAI_JUDGE = "gpt-4o-mini"
+_OPENAI_JUDGE = "gpt-5.4-nano"
 _OPENAI_EMBED = "text-embedding-3-small"
 _CLAUDE_JUDGE = "claude-haiku-4-5"
 
@@ -232,7 +232,7 @@ def score_answer(question: str, answer: str) -> float:
     if p == "openai":
         resp = _openai_client().chat.completions.create(
             model=_OPENAI_JUDGE,
-            max_tokens=8,
+            max_completion_tokens=8,
             messages=[
                 {"role": "system", "content": _JUDGE_SYSTEM},
                 {"role": "user", "content": prompt},
