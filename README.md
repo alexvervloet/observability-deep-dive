@@ -414,6 +414,7 @@ a real capstone.
 **Bonus dives**, standalone and slotting in where they're most useful:
 
 - [Context Engineering](https://github.com/alexvervloet/context-engineering-deep-dive): manage what's in the window: memory, compaction, assembly
+- [AI Data Engineering](https://github.com/alexvervloet/ai-data-engineering-deep-dive): the corpus behind the index: versions, lineage, ACLs, deletes
 - [Multimodal](https://github.com/alexvervloet/multimodal-deep-dive): images & audio, not just text
 - [Fine-tuning](https://github.com/alexvervloet/fine-tuning-deep-dive): teach a model new behavior by example
 - [MCP](https://github.com/alexvervloet/mcp-deep-dive): serve tools, data & prompts to any LLM over a standard protocol
@@ -421,6 +422,8 @@ a real capstone.
 - [Agent Harnesses](https://github.com/alexvervloet/agent-harness-deep-dive): build on the loop: hooks, permissions, sandboxing, subagents
 - [Realtime Voice](https://github.com/alexvervloet/realtime-voice-deep-dive): low-latency speech-to-speech agents
 - **Observability**: watch a running app over time: drift, quality, alerting, the flywheel
+- [Architecture](https://github.com/alexvervloet/architecture-deep-dive): the seams between the components, each decision measured rather than asserted
+- [Professional Tools](https://github.com/alexvervloet/professional-tools-deep-dive): rebuild each from-scratch primitive with the tool professionals reach for, and measure both
 
 **You are here: Observability**, the bonus dive that pairs with Production (#8) and
 Evals (#5). Production operates one request; this operates six weeks of them.
