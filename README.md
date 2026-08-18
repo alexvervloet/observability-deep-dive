@@ -425,5 +425,9 @@ a real capstone.
 - [Architecture](https://github.com/alexvervloet/architecture-deep-dive): the seams between the components, each decision measured rather than asserted
 - [Professional Tools](https://github.com/alexvervloet/professional-tools-deep-dive): rebuild each from-scratch primitive with the tool professionals reach for, and measure both
 
+And the whole series lands in one codebase in the
+[capstone](https://github.com/alexvervloet/deep-dive-capstone): a codebase Q&A tool
+built step by step, one tag per dive.
+
 **You are here: Observability**, the bonus dive that pairs with Production (#8) and
 Evals (#5). Production operates one request; this operates six weeks of them.
