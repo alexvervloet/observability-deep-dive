@@ -145,7 +145,7 @@ _SEGMENTS = [("free", 0.55), ("pro", 0.30), ("enterprise", 0.15)]
 
 _REFUSALS = [
     "I don't have information about that in the Acme Cloud help center. Please contact support@acme.example.",
-    "I'm not sure about that one — I'd recommend reaching out to support@acme.example for help.",
+    "I'm not sure about that one. I'd recommend reaching out to support@acme.example for help.",
 ]
 # Degraded answers during a quality regression: technically on-topic, but terse and
 # unhelpful: the shape a weaker model regresses toward.
