@@ -63,7 +63,7 @@ pip install -r requirements.txt
 # 3. Copy the env file: the default runs keyless (no API key needed)
 cp .env.example .env
 #    (Real judge/embeddings instead of the mock? Their key goes in your OS
-#     keychain, not .env: see ../SECRETS.md, then run scripts as `secrun python ...`.)
+#     keychain, not .env: see ../docs/SECRETS.md, then run scripts as `secrun python ...`.)
 
 # 4. Confirm everything is wired up (makes no API call, costs nothing)
 python check_setup.py
@@ -381,7 +381,7 @@ Run `python check_setup.py` first; it catches most problems. Then, by symptom:
 | What you see | What it means / the fix |
 |--------------|-------------------------|
 | `ModuleNotFoundError: dotenv` | Dependencies aren't installed or the venv isn't active. `source .venv/bin/activate` then `pip install -r requirements.txt`. |
-| `PROVIDER=... needs ... in the environment` | You switched to a real provider without a key. Load it from your keychain with `secrun` (see [../SECRETS.md](../SECRETS.md)), or go back to `PROVIDER=mock`. |
+| `PROVIDER=... needs ... in the environment` | You switched to a real provider without a key. Load it from your keychain with `secrun` (see [../docs/SECRETS.md](../docs/SECRETS.md)), or go back to `PROVIDER=mock`. |
 | The mock judge/embeddings "aren't a real model" | Correct: they're deterministic stand-ins so the repo runs offline. Flip `PROVIDER=openai` and run under `secrun` for the real thing; the drift/quality *stories* don't change, the exact numbers do. |
 | A detector fires on a day I didn't expect | Baselines and z-scores are sensitive to the baseline window. Widen `--baseline-days`, or read the z-series with `obs.alerts.signed_z` to see why. |
 | The judge z-score wobbles between runs | The judge *samples* (per-day, seeded), so a different `--per-day` changes the estimate. Bigger samples shrink the margin (§6). |

@@ -112,7 +112,7 @@ def ensure_ready() -> None:
     if missing:
         sys.exit(
             f"PROVIDER={p} needs {', '.join(missing)} in the environment. "
-            f"Provide them via secrun (see ../SECRETS.md). "
+            f"Provide them via secrun (see ../docs/SECRETS.md). "
             f"(Tip: PROVIDER=mock needs no key and runs everything offline.)"
         )
 
