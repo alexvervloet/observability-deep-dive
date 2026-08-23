@@ -109,7 +109,7 @@ goes wrong for users, and why is that the scariest kind of failure?
 
 The model answers questions it can't answer well: here, refusing (or worse,
 confidently guessing) about a mobile app that isn't in the KB. Nothing errors, so
-every ops dashboard stays green while answer quality quietly rots. A failure that
+every ops dashboard stays green while answer quality rots. A failure that
 throws an exception gets caught in minutes; a silent quality failure can run for
 weeks until users leave.
 </details>
@@ -136,9 +136,9 @@ every request, and what does the sample size trade off?
 <details><summary>▸ Answer</summary>
 
 Because grading isn't free. A real LLM-as-judge costs a call per answer, and you
-have thousands a day. Sampling keeps the cost bounded. The trade: a smaller sample
-is cheaper but has a wider confidence interval, so it takes a bigger true drop to
-detect. More samples, tighter margin, higher cost: you pick the point.
+have thousands a day. Sampling keeps the cost bounded, and it trades one thing for
+another. A smaller sample is cheaper and has a wider confidence interval, so it takes
+a bigger true drop to detect. More samples, tighter margin, higher cost: you pick the point.
 </details>
 
 ---
@@ -194,7 +194,7 @@ thumbs-down to find failures. You mine proxies (refusals, terse answers) instead
 The mined failures become candidate eval cases in the exact JSONL shape the Evals
 dive uses. A human writes the gold answer, they drop into the regression suite, and
 now that failure can never silently return. Production → Observability → Evals →
-Production: the feedback flywheel.
+Production: the feedback loop.
 </details>
 
 ---
