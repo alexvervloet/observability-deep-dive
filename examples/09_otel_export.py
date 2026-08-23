@@ -182,7 +182,7 @@ else:
 
     wire = otel.setup(exporter="otlp", endpoint=args.endpoint)
     sent = otel.replay(wire, batch, capture_content=args.capture_content)
-    print(f"Exporting {sent} spans to {args.endpoint} as gzipped protobuf ...")
+    print(f"Exporting {sent} spans, pipeline {wire.describe()}, as gzipped protobuf ...")
     # shutdown() flushes: without it, the batch processor's queue dies with the
     # process and your spans never leave. This is the #1 "my traces are missing" bug.
     wire.shutdown()
