@@ -18,3 +18,11 @@ openai>=2.0,<3
 
 # Anthropic: used when PROVIDER=claude.
 anthropic>=0.111.0,<1
+
+# --- OpenTelemetry (OPTIONAL: Section 11 only) ---
+# The one section that emits real telemetry instead of analyzing logs. The SDK
+# runs fully offline (its console and in-memory exporters need no network); the
+# OTLP exporter is what puts spans on the wire, to hands_on/otel_collector.py, a
+# real collector, or a vendor. Nothing else in the repo imports these.
+opentelemetry-sdk>=1.44,<2
+opentelemetry-exporter-otlp-proto-http>=1.44,<2
