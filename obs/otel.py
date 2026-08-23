@@ -58,6 +58,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Iterator
@@ -65,26 +66,50 @@ from typing import Any, Iterator
 from obs.logs import LogRecord
 
 _INSTALL_HINT = (
-    "This section needs the OpenTelemetry SDK, which is an optional extra:\n"
-    "    pip install opentelemetry-sdk opentelemetry-exporter-otlp-proto-http\n"
+    "This section needs {what}, which is an optional extra:\n"
+    "    pip install {packages}\n"
     "(or `pip install -r requirements.txt`, which includes it). Every other\n"
     "section of this repo runs without it."
 )
 
+# The SDK and the OTLP exporter are two separate installs, and having one without
+# the other is a real state to land in, not a hypothetical: the console and memory
+# exporters work on the SDK alone. So each capability is checked on its own.
+_SDK_PACKAGE = "opentelemetry-sdk"
+_OTLP_PACKAGE = "opentelemetry-exporter-otlp-proto-http"
 
-def available() -> bool:
-    """True if the optional OTel packages are importable."""
+
+def _importable(module: str) -> bool:
     try:
-        import opentelemetry.sdk.trace  # noqa: F401
+        __import__(module)
     except ImportError:
         return False
     return True
 
 
-def require() -> None:
+def available(*, otlp: bool = False) -> bool:
+    """True if the optional OTel packages are importable.
+
+    Pass otlp=True to also require the exporter package, which is what putting
+    telemetry on the wire needs and what the console and memory exporters do not.
+    """
+    if not _importable("opentelemetry.sdk.trace"):
+        return False
+    if otlp and not _importable("opentelemetry.exporter.otlp.proto.http.trace_exporter"):
+        return False
+    return True
+
+
+def require(*, otlp: bool = False) -> None:
     """Fail with an actionable message instead of a bare ImportError."""
-    if not available():
-        raise SystemExit(f"\n{_INSTALL_HINT}\n")
+    if not _importable("opentelemetry.sdk.trace"):
+        raise SystemExit("\n" + _INSTALL_HINT.format(
+            what="the OpenTelemetry SDK",
+            packages=f"{_SDK_PACKAGE} {_OTLP_PACKAGE}") + "\n")
+    if otlp and not _importable("opentelemetry.exporter.otlp.proto.http.trace_exporter"):
+        raise SystemExit("\n" + _INSTALL_HINT.format(
+            what="the OpenTelemetry OTLP/HTTP exporter (the SDK alone is installed)",
+            packages=_OTLP_PACKAGE) + "\n")
 
 
 # The service this telemetry claims to come from. In a real deployment this is
@@ -94,15 +119,40 @@ SERVICE_NAME = "acme-support-assistant"
 
 DEFAULT_OTLP_ENDPOINT = "http://localhost:4318"
 
+# Every conventional key this module is allowed to set, listed once. Two jobs: it
+# documents which names are borrowed rather than invented, and it lets
+# tests/test_otel.py fail the build if someone adds a gen_ai.* attribute of their
+# own devising. Inventing a name inside somebody else's namespace is how you
+# collide with next year's convention; unconventional things belong under app.*.
+CONVENTIONAL_ATTRIBUTES = frozenset({
+    "gen_ai.operation.name",
+    "gen_ai.provider.name",
+    "gen_ai.request.model",
+    "gen_ai.response.model",
+    "gen_ai.usage.input_tokens",
+    "gen_ai.usage.output_tokens",
+    "gen_ai.input.messages",
+    "gen_ai.output.messages",
+    "gen_ai.evaluation.name",
+    "gen_ai.evaluation.score.value",
+    "gen_ai.token.type",
+})
+
 
 @dataclass
 class Telemetry:
     """A configured OTel pipeline: what you emit through, and how to shut it down.
 
     Holding this as one object (rather than reaching for globals) keeps the
-    example honest about lifecycle: an exporter that is never flushed drops the
-    spans still sitting in its batch queue, which is the single most common
-    "my instrumentation doesn't work" bug there is.
+    example honest about lifecycle. Spans sit in a batch queue until something
+    ships them, so *when* the queue drains is a real question rather than a
+    detail. Python's SDK is kinder here than its reputation suggests: both
+    providers default to `shutdown_on_exit=True` and register an `atexit` hook,
+    so a normally-exiting process flushes even if you forget. What that hook
+    cannot save you from is every exit that skips `atexit`: `os._exit()`, a
+    SIGKILL, an OOM kill, a container stopped past its grace period, a forked
+    worker that never runs the parent's handlers. Calling `shutdown()` yourself is
+    how you stop depending on which kind of exit you got.
     """
 
     tracer: Any
@@ -121,21 +171,38 @@ class Telemetry:
     outcomes: Any = None
 
     def flush(self) -> None:
-        """Force everything queued out to the exporter. Call before you exit."""
+        """Force everything queued out to the exporter, without stopping.
+
+        This is the one for a long-running process that needs data out *now*: at
+        the end of a job, before a risky operation, or in a signal handler.
+        """
         for p in self._providers:
             p.force_flush()
 
     def shutdown(self) -> None:
-        """Flush and stop. Note that we do NOT force_flush first: a provider's
-        shutdown already exports what is queued, and doing both ships the metric
-        batch twice, which shows up in a backend as doubled counters."""
+        """Stop the pipeline, exporting whatever is still queued.
+
+        There is no `force_flush()` call here, because `shutdown()` already
+        exports what is queued and doing both sends the batch twice. Whether that
+        second copy hurts depends on **temporality**, which is worth knowing: the
+        default here is *cumulative*, where every export carries the running
+        total, so a duplicate point is the same total at the same timestamp and
+        the backend simply overwrites it. Under *delta* temporality, which several
+        vendors ask for, each export carries only what happened since the last
+        one, and a duplicate is genuinely counted twice. Same code, different
+        blast radius, decided by a setting most people never look at."""
         for p in self._providers:
             p.shutdown()
 
     def finished_spans(self) -> tuple:
-        """The spans collected so far, for exporter="memory". Asserting on these
-        is how you keep instrumentation from rotting: a renamed attribute is a
-        silent dashboard outage otherwise, and no test catches it for you."""
+        """The spans collected so far, for exporter="memory".
+
+        Asserting on these is how you keep instrumentation from rotting. Rename an
+        attribute and nothing throws: the code runs, the spans flow, and every
+        dashboard and alert keyed to the old name goes quietly blank. See
+        tests/test_otel.py, which pins the conventional names, the status mapping,
+        the PII default, and the metric shape for exactly that reason.
+        """
         if self._span_exporter is None:
             raise RuntimeError('finished_spans() needs setup(exporter="memory")')
         self.flush()
@@ -189,7 +256,7 @@ def setup(
     who you are, a provider that owns the pipeline, a processor that batches, and
     an exporter that ships. Everything after this is just calling `start_span`.
     """
-    require()
+    require(otlp=(exporter == "otlp"))
 
     from opentelemetry import metrics as otel_metrics
     from opentelemetry import trace as otel_trace
@@ -223,12 +290,23 @@ def setup(
     elif exporter == "otlp":
         # The real thing: protobuf over HTTP. `grpc` is the other option, and the
         # only difference to your code is which package you import.
+        from opentelemetry.exporter.otlp.proto.http import Compression
         from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
         endpoint = (endpoint or DEFAULT_OTLP_ENDPOINT).rstrip("/")
-        span_exporter = OTLPSpanExporter(endpoint=f"{endpoint}/v1/traces", timeout=5)
-        metric_exporter = OTLPMetricExporter(endpoint=f"{endpoint}/v1/metrics", timeout=5)
+        # Compression is OFF by default in this SDK (Compression.NoCompression),
+        # which surprises people who assume telemetry is compressed. Turning it on
+        # is one argument, and it is not a rounding error: 100 spans of this
+        # traffic measure 47KB of protobuf and 7KB on the wire, about 7x, because
+        # span payloads are the same attribute keys repeated thousands of times.
+        # Telemetry bills are usually metered on ingest volume. The receiving end
+        # has to handle both, which is why a collector checks Content-Encoding
+        # instead of assuming (ours does, in hands_on/otel_collector.py).
+        span_exporter = OTLPSpanExporter(
+            endpoint=f"{endpoint}/v1/traces", timeout=5, compression=Compression.Gzip)
+        metric_exporter = OTLPMetricExporter(
+            endpoint=f"{endpoint}/v1/metrics", timeout=5, compression=Compression.Gzip)
     else:
         raise ValueError(f"unknown exporter {exporter!r}: use console, otlp, or memory")
 
@@ -322,6 +400,14 @@ def _parent_context(raw_trace_id: str):
 
     This is also exactly how a service picks up a `traceparent` header from
     upstream: build a SpanContext you did not create, and start your span under it.
+
+    One consequence to expect when you point a replay at a real backend: each
+    span names a parent that **is never exported**, because the parent is the
+    upstream request this repo never recorded. Jaeger will show a trace whose root
+    is missing, which looks broken and is not. A live service does not have this
+    problem, since the upstream that sent the traceparent exports its own span. If
+    you want self-contained traces from a replay instead, drop this parent and let
+    each span start a trace of its own.
     """
     from opentelemetry import trace as otel_trace
 
@@ -362,9 +448,8 @@ def record_attributes(rec: LogRecord, *, capture_content: bool = False) -> dict:
         "app.log.trace_id": rec.trace_id,
     }
     if rec.segment:
-        # The cohort dimension from the segmentation section. Free to slice by on
-        # a span;
-        # on a *metric* it would multiply your time series, which is the
+        # The cohort dimension from the segmentation section. Free to slice by on a
+        # span; on a *metric* it would multiply your time series, which is the
         # tradeoff the metrics below make deliberately.
         attrs["app.segment"] = rec.segment
     if rec.feedback is not None:
@@ -439,8 +524,6 @@ def replay(tel: Telemetry, records: list[LogRecord], *, capture_content: bool = 
     replay-only concern, and knowing it saves an afternoon of "where did my spans
     go" the first time you backfill.
     """
-    import time
-
     if not records:
         return 0
     offset_ns = 0
@@ -467,8 +550,16 @@ def llm_span(tel: Telemetry, *, model: str, provider: str, operation: str = "cha
 
     Timing, status, and exception recording come for free from the context
     manager. If the body raises, the span is marked ERROR with the stack trace
-    attached, which is the behaviour you want and the part people forget when
-    they hand-roll timing with `time.perf_counter()`.
+    attached, which is the behaviour people forget when they hand-roll a timer and
+    a try/except around the call.
+
+    The duration metric is measured with `time.perf_counter()` rather than the
+    wall clock, deliberately. Wall-clock time can jump backwards or forwards
+    (NTP corrections, a suspended laptop) and would silently poison a latency
+    histogram; a monotonic clock is the right instrument for "how long did this
+    take". The span keeps its own wall-clock start and end because a span is an
+    *event on a timeline* that has to line up with other services, which is a
+    different question from elapsed time and deserves a different clock.
     """
     from opentelemetry import trace as otel_trace
 
@@ -478,7 +569,7 @@ def llm_span(tel: Telemetry, *, model: str, provider: str, operation: str = "cha
         "gen_ai.request.model": model,
         **attributes,
     }
-    start = _now_ns()
+    start = time.perf_counter()
     with tel.tracer.start_as_current_span(
         f"{operation} {model}", kind=otel_trace.SpanKind.CLIENT, attributes=attrs
     ) as span:
@@ -486,13 +577,7 @@ def llm_span(tel: Telemetry, *, model: str, provider: str, operation: str = "cha
             yield span
         finally:
             tel.duration.record(
-                (_now_ns() - start) / 1e9,
+                time.perf_counter() - start,
                 {"gen_ai.operation.name": operation, "gen_ai.provider.name": provider,
                  "gen_ai.request.model": model},
             )
-
-
-def _now_ns() -> int:
-    import time
-
-    return time.time_ns()
