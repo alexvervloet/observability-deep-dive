@@ -59,7 +59,27 @@ def _get(env, name):
     return os.getenv(name) or (env or {}).get(name, "")
 
 
+def _installed(module):
+    """Is this importable? Safe for dotted names.
+
+    find_spec("a.b") imports the parent package `a` to look inside it, so it
+    raises ModuleNotFoundError (rather than returning None) when `a` itself is
+    missing. Anything that probes submodules has to catch that.
+    """
+    try:
+        return importlib.util.find_spec(module) is not None
+    except (ImportError, ValueError):
+        return False
+
+
 ALWAYS = [("dotenv", "python-dotenv", "loads PROVIDER/config from .env")]
+# Needed by exactly one section (11, real OpenTelemetry). Missing is a warning,
+# never a failure: the other ten sections do not import it.
+OPTIONAL = [
+    ("opentelemetry.sdk", "opentelemetry-sdk", "Section 11: emit real OTel spans/metrics"),
+    ("opentelemetry.exporter.otlp.proto.http", "opentelemetry-exporter-otlp-proto-http",
+     "Section 11: export over the real OTLP wire"),
+]
 PROVIDER_DEPS = {
     "mock": [],  # the offline default: standard library only
     "openai": [("openai", "openai", "real judge + embeddings")],
@@ -99,13 +119,23 @@ def check_dependencies(provider):
     needed = ALWAYS + PROVIDER_DEPS.get(provider, [])
     missing = []
     for import_name, pip_name, purpose in needed:
-        if importlib.util.find_spec(import_name) is not None:
+        if _installed(import_name):
             ok(f"{pip_name}: {purpose}")
         else:
             fail(f"{pip_name} MISSING: {purpose}")
             missing.append(pip_name)
     if provider == "mock":
         ok("everything else is the Python standard library")
+
+    absent = [pip for imp, pip, _ in OPTIONAL if not _installed(imp)]
+    for import_name, pip_name, purpose in OPTIONAL:
+        if _installed(import_name):
+            ok(f"{pip_name}: {purpose}")
+    if absent:
+        warn("OpenTelemetry extras not installed: Section 11 (real OTel/OTLP) will")
+        print(f"      ask you to `pip install {' '.join(absent)}`.")
+        print("      Every other section runs fine without them.")
+
     if missing:
         print("\n    Install everything with:")
         print("        pip install -r requirements.txt")
