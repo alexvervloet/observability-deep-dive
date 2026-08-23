@@ -306,8 +306,11 @@ Three things the example makes concrete:
   OTel declines to standardize it. Conventions for conventional things, your own
   prefix for the rest.
 - **Spans are events; metrics are aggregates.** 300 requests produce 300 spans and
-  8 metric points, and at 300 million requests it is still 8 metric points. That
-  ratio is why the rule of thumb is *alert on metrics, debug on traces*, and why
+  8 metric points, and at 300 million requests it is still 8 metric points, because
+  a metric point is one per *attribute combination*, not one per request. (It moves
+  when a combination appears that had not occurred before, which is a bound, not a
+  constant.) That ratio is why the rule of thumb is *alert on metrics, debug on
+  traces*, and why
   metric attributes are deliberately a smaller set than span attributes: each
   distinct combination is its own time series, so `trace_id` is free on a span and
   a cardinality disaster on a metric.
@@ -321,9 +324,9 @@ Three things the example makes concrete:
 The usual way to see OTLP work is to `docker run` a collector, a backend, and a
 browser tab. This repo runs offline, so instead
 [hands_on/otel_collector.py](hands_on/otel_collector.py) implements the *receiving*
-end of the protocol in about 150 lines: it accepts the gzipped protobuf the
-exporter posts and decodes it with the same generated classes the exporter used to
-encode it. Two terminals:
+end of the protocol in about 200 lines: it accepts the protobuf the exporter
+posts, ungzips it when the `Content-Encoding` header says to, and decodes it with
+the same generated classes the exporter used to encode it. Two terminals:
 
 ```bash
 python hands_on/otel_collector.py        # terminal 1: listens on localhost:4318
@@ -345,10 +348,13 @@ decision you can make before you have picked a backend.
 
 ### Three things that will bite you
 
-- **Nothing arrives, no error.** The batch processor queues spans and ships them
-  on an interval, so a process that exits without `shutdown()` (or `force_flush()`)
-  drops its last batch silently. This is the most common "my instrumentation
-  doesn't work" bug there is.
+- **The batch queue outlives your intentions.** Spans are batched, not sent as
+  they end. Python's SDK registers an `atexit` hook, so a *clean* exit flushes
+  even if you never call `shutdown()`, which is worth verifying rather than
+  believing (the exercises walk you through it). What no hook survives is an exit
+  that skips `atexit`: `os._exit`, SIGKILL, an OOM kill, a container stopped past
+  its grace period, a forked worker, or an SDK in another language without that
+  default. Call `shutdown()` and the question stops mattering.
 - **Old spans vanish.** Backends have look-back windows; backfilled history that
   is weeks old may be accepted and never shown. `replay()` slides the batch
   forward to now for exactly this reason, and says so.
@@ -357,6 +363,26 @@ decision you can make before you have picked a backend.
   (OTel's own is `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`). Turning it
   on ships user text to a third-party store on someone else's retention schedule.
   Most teams enable it for a sampled slice, never for all traffic.
+
+- **Compression is off by default.** This SDK sends uncompressed protobuf unless
+  you ask otherwise; [obs/otel.py](obs/otel.py) asks (`compression=Compression.Gzip`),
+  which is worth about 7x on this payload. Telemetry is usually billed on ingest
+  volume, so this is one argument for a real discount, and the receiver has to
+  check `Content-Encoding` rather than assume either way.
+
+Instrumentation also rots in a way nothing else in this repo does: rename an
+attribute and no exception is raised, the spans keep flowing, and every dashboard
+and alert keyed to the old name goes quietly blank. That is what
+[tests/test_otel.py](tests/test_otel.py) is for, and it is the one test in this
+repo worth copying into your own:
+
+```bash
+python -m unittest discover -s tests
+```
+
+It pins the conventional attribute names, the low-cardinality span name, the error
+status mapping, the PII default, and the metric shape. It has already earned its
+keep: it failed on a claim the prose in this section had made three times.
 
 > **OTel is transport, not judgement.** Adopting it replaces §2 and §3 of this
 > repo: writing telemetry down, and computing metrics from it yourself. It does
@@ -452,7 +478,9 @@ obs/                        ← the from-scratch observability stack (read it!)
 hands_on/
   watch.py                  ← capstone: dashboard + incident timeline + detection report
   obs_html.py               ← optional self-contained HTML dashboard (--html)
-  otel_collector.py         ← a 150-line OTLP/HTTP receiver, so the wire works offline
+  otel_collector.py         ← a 200-line OTLP/HTTP receiver, so the wire works offline
+tests/
+  test_otel.py              ← pins the span/metric contract: names, status, PII default
 examples/
   00_generate_traffic.py    ← the log history that makes it all runnable (no key)
   01_metrics_from_logs.py   ← logs → the numbers you watch (p50/p95, cost, rates)
