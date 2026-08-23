@@ -7,7 +7,10 @@ support assistant, generate weeks of its request logs, and build the machinery
 that watches a *running* system over time: operational metrics, input drift,
 quality drift, alerting that doesn't cry wolf, and the flywheel that turns
 production failures back into eval cases. No framework, no SaaS dashboard, no
-Grafana: just enough code to *see* how each piece works.
+Grafana: just enough code to *see* how each piece works. Then, at the end, you
+emit the same telemetry as real **OpenTelemetry over OTLP** (§11), so you can see
+exactly which part of what you built the industry standard replaces, and which
+part it doesn't.
 
 The twist that makes this repo work: it runs **completely offline on synthetic
 log history**, with no API key. Everything else in the series measures your app at
@@ -57,7 +60,8 @@ the difference between a bad Tuesday and a real incident.
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# 2. Install dependencies (just python-dotenv for the default offline stack)
+# 2. Install dependencies (python-dotenv for the default offline stack, plus the
+#    optional OpenTelemetry extras that §11 uses; everything else is stdlib)
 pip install -r requirements.txt
 
 # 3. Copy the env file: the default runs keyless (no API key needed)
@@ -278,6 +282,92 @@ the entire craft, and it's a tuning choice you can see and change.
 
 ---
 
+## 11. Real OpenTelemetry: the same telemetry, on the wire
+
+Everything so far *analyzed* logs. This section *emits* them, in the format the
+industry actually ships: real **OpenTelemetry** spans and metrics, over the real
+**OTLP** protocol, from the same `LogRecord` you have been reading all along.
+[obs/otel.py](obs/otel.py) is the whole integration, and it is smaller than any
+detector in this repo.
+
+```bash
+pip install -r requirements.txt          # the OTel extras are optional, and in there
+
+python examples/09_otel_export.py        # offline: read a real span, no network
+python examples/09_otel_export.py --console   # the SDK's raw console exporter
+```
+
+Three things the example makes concrete:
+
+- **What a span actually contains.** The `gen_ai.*` attribute names are
+  **semantic conventions**, so an LLM-aware backend renders a model call view
+  without being told anything about your app. The `app.*` ones are yours. Cost
+  lives there on purpose: it is priced per vendor, per model, per contract, so
+  OTel declines to standardize it. Conventions for conventional things, your own
+  prefix for the rest.
+- **Spans are events; metrics are aggregates.** 300 requests produce 300 spans and
+  8 metric points, and at 300 million requests it is still 8 metric points. That
+  ratio is why the rule of thumb is *alert on metrics, debug on traces*, and why
+  metric attributes are deliberately a smaller set than span attributes: each
+  distinct combination is its own time series, so `trace_id` is free on a span and
+  a cardinality disaster on a metric.
+- **Instrumenting a live call is three lines.** `otel.llm_span(...)` wraps the
+  call you already make; timing, status, and exception recording come free. The
+  sampled judge score from §6 rides along as `gen_ai.evaluation.*`, which is how a
+  backend charts quality beside latency.
+
+### Watch it cross a socket, without Docker
+
+The usual way to see OTLP work is to `docker run` a collector, a backend, and a
+browser tab. This repo runs offline, so instead
+[hands_on/otel_collector.py](hands_on/otel_collector.py) implements the *receiving*
+end of the protocol in about 150 lines: it accepts the gzipped protobuf the
+exporter posts and decodes it with the same generated classes the exporter used to
+encode it. Two terminals:
+
+```bash
+python hands_on/otel_collector.py        # terminal 1: listens on localhost:4318
+python examples/09_otel_export.py --otlp # terminal 2: sends real OTLP
+```
+
+Terminal 1 prints the spans and metric points that arrived. That is the actual
+protocol, not a simulation of it. Point the exporter at a real backend instead and
+nothing in the emitting code changes:
+
+```bash
+docker run -p 4318:4318 -p 16686:16686 jaegertracing/all-in-one
+python examples/09_otel_export.py --otlp --endpoint http://localhost:4318
+```
+
+Only the URL and an auth header differ for a vendor. That interchangeability is
+the whole reason the standard exists, and it is why "we emit OpenTelemetry" is a
+decision you can make before you have picked a backend.
+
+### Three things that will bite you
+
+- **Nothing arrives, no error.** The batch processor queues spans and ships them
+  on an interval, so a process that exits without `shutdown()` (or `force_flush()`)
+  drops its last batch silently. This is the most common "my instrumentation
+  doesn't work" bug there is.
+- **Old spans vanish.** Backends have look-back windows; backfilled history that
+  is weeks old may be accepted and never shown. `replay()` slides the batch
+  forward to now for exactly this reason, and says so.
+- **Message content is a PII decision.** Question and answer text are off the span
+  by default here, and gated behind a flag in every real GenAI instrumentation
+  (OTel's own is `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`). Turning it
+  on ships user text to a third-party store on someone else's retention schedule.
+  Most teams enable it for a sampled slice, never for all traffic.
+
+> **OTel is transport, not judgement.** Adopting it replaces §2 and §3 of this
+> repo: writing telemetry down, and computing metrics from it yourself. It does
+> not replace §4 through §10. A backend will happily store a million perfectly
+> formed spans and never once tell you that quality drifted. Baselines, drift
+> detection, the sampled judge, alert tuning, and mining failures back into evals
+> are still yours to build or buy. That is the honest shape of every "just use the
+> industry tool" upgrade in this series: you buy the plumbing, not the judgement.
+
+---
+
 ## Going further: more observability concerns
 
 The core arc ends at the capstone. These are the next ones you hit at scale; the
@@ -325,7 +415,8 @@ same:
 
 - **Metrics & tracing** → OpenTelemetry + a backend (Grafana/Tempo, Honeycomb,
   Datadog), or an LLM-native platform (Langfuse, Arize Phoenix, Braintrust) that
-  captures traces, costs, and judge scores for you.
+  captures traces, costs, and judge scores for you. **§11 already does the
+  emitting half for real**, so this swap is a URL and an auth header away.
 - **Drift detection** → Evidently, NannyML, or Arize for input/embedding drift with
   managed baselines and reports, instead of hand-rolled PSI.
 - **Quality monitoring** → a continuous LLM-as-judge on sampled production traffic,
@@ -357,9 +448,11 @@ obs/                        ← the from-scratch observability stack (read it!)
   alerts.py                 ← baselines, z-scores, persistence, EWMA → alerts
   mining.py                 ← surface + cluster failures into eval candidates
   providers.py              ← the ONLY provider seam: mock (default) + openai + claude
+  otel.py                   ← real OpenTelemetry: LogRecord → spans + metrics → OTLP
 hands_on/
   watch.py                  ← capstone: dashboard + incident timeline + detection report
   obs_html.py               ← optional self-contained HTML dashboard (--html)
+  otel_collector.py         ← a 150-line OTLP/HTTP receiver, so the wire works offline
 examples/
   00_generate_traffic.py    ← the log history that makes it all runnable (no key)
   01_metrics_from_logs.py   ← logs → the numbers you watch (p50/p95, cost, rates)
@@ -370,6 +463,7 @@ examples/
   06_mining_traffic.py      ← failures → clusters → eval candidates (the flywheel)
   07_classic_mlops_sidebar.py ← the tabular-MLOps vocabulary, and why it doesn't fit
   08_segmentation.py        ← slice by cohort: the incident a global average hides
+  09_otel_export.py         ← real OTel spans + metrics, over real OTLP (optional deps)
 ```
 
 ---
@@ -385,6 +479,9 @@ Run `python check_setup.py` first; it catches most problems. Then, by symptom:
 | The mock judge/embeddings "aren't a real model" | Correct: they're deterministic stand-ins so the repo runs offline. Flip `PROVIDER=openai` and run under `secrun` for the real thing; the drift/quality *stories* don't change, the exact numbers do. |
 | A detector fires on a day I didn't expect | Baselines and z-scores are sensitive to the baseline window. Widen `--baseline-days`, or read the z-series with `obs.alerts.signed_z` to see why. |
 | The judge z-score wobbles between runs | The judge *samples* (per-day, seeded), so a different `--per-day` changes the estimate. Bigger samples shrink the margin (§6). |
+| `This section needs the OpenTelemetry SDK` | §11 only. `pip install -r requirements.txt` (or the two `opentelemetry-*` packages it lists). Sections 2 through 10 don't import them. |
+| `--otlp` says nothing is listening on `:4318` | Start the receiver first, in another terminal: `python hands_on/otel_collector.py`. |
+| Spans exported, but the backend shows nothing | Two usual causes: the process exited without flushing (call `shutdown()`), or the timestamps are older than the backend's look-back window (§11). |
 | `SyntaxError` / odd type errors on startup | You're likely on Python 3.9 or older; this repo needs 3.10+. `check_setup.py` confirms your version. |
 
 Still stuck? Every file is small and self-contained. Open it, read the docstring
