@@ -52,7 +52,8 @@ class LogRecord:
     feedback: int | None = None  # +1 / -1 from the user, or None (the common case)
     # A cohort dimension: here the customer's plan ("free"/"pro"/"enterprise"). Real
     # apps log several (tenant, locale, channel, prompt version). Slicing metrics by
-    # a segment is how you catch a problem that a global average hides (Section 11).
+    # a segment is how you catch a problem that a global average hides (the
+    # segmentation section, under "Going further").
     segment: str = ""
     # The answer text. Cheap metrics (above) are logged for EVERY request; capturing
     # full input/output is a choice with a cost: it's a PII sink (Production §3) and
