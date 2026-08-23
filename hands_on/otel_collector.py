@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-otel_collector.py: a real OTLP/HTTP receiver in about 150 lines, no Docker.
+otel_collector.py: a real OTLP/HTTP receiver in about 200 lines, no Docker.
 
     python hands_on/otel_collector.py            # listens on http://localhost:4318
 
@@ -12,7 +12,8 @@ Why this exists: the usual way to see OTLP working is `docker run` a collector
 plus Jaeger plus a browser tab, and that is three things to install before you
 learn anything. This repo runs offline, so instead we implement the receiving end
 of the protocol directly. It is genuinely the real protocol: the exporter posts
-gzipped **protobuf** to `/v1/traces` and `/v1/metrics`, and this server decodes it
+**protobuf** to `/v1/traces` and `/v1/metrics` (gzipped, because obs/otel.py asks
+for compression; the SDK's own default is off), and this server decodes it
 with the same generated classes the exporter used to encode it (`opentelemetry-proto`,
 which the exporter already pulls in), then prints what arrived.
 
@@ -34,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import io
 import sys
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -138,7 +140,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802 (http.server's naming, not ours)
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length)
-        # The Python exporter gzips by default. Real collectors must handle both.
+        # Compression is negotiated per request, never assumed. This SDK sends
+        # uncompressed unless the exporter was built with compression=Gzip, which
+        # ours is, so a receiver that skipped this check would work against one
+        # configuration and fail against the other.
         if self.headers.get("Content-Encoding") == "gzip":
             body = gzip.decompress(body)
         TOTALS["requests"] += 1
@@ -178,13 +183,16 @@ def main() -> int:
 
     Handler.verbose = args.verbose
     # Line-buffer stdout so `python hands_on/otel_collector.py > log` shows spans as
-    # they land instead of whenever a 8KB buffer happens to fill. A tail -f of a
+    # they land instead of whenever an 8KB buffer happens to fill. A tail -f of a
     # block-buffered pipe looks exactly like a receiver that is not receiving.
-    sys.stdout.reconfigure(line_buffering=True)
+    # (reconfigure() is a TextIOWrapper method; sys.stdout is only typed as TextIO,
+    # and can be something else entirely when a host has replaced it.)
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(line_buffering=True)
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"OTLP/HTTP receiver listening on http://{args.host}:{args.port}")
-    print("  POST /v1/traces    (gzipped protobuf)")
-    print("  POST /v1/metrics   (gzipped protobuf)")
+    print("  POST /v1/traces    (protobuf, gzip optional)")
+    print("  POST /v1/metrics   (protobuf, gzip optional)")
     print("\nSend it something:  python examples/09_otel_export.py --otlp")
     print("Ctrl-C to stop.\n")
     try:
