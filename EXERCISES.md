@@ -244,6 +244,68 @@ threshold that gives you both; you choose where on the curve to sit.
 
 ---
 
+## Section 11: Real OpenTelemetry
+
+**Predict, then run.** `examples/09_otel_export.py` replays 300 requests through a
+real OTel pipeline. Before running, predict two counts: how many **spans** does
+that produce, and how many **metric points** leave the process?
+
+<details><summary>▸ Answer</summary>
+
+300 spans (one event per request, and that number scales 1:1 with traffic) and 8
+metric points: one duration histogram, two token histograms (input and output),
+one cost counter, and four request counters, one per outcome/cache combination
+present in the data. Ten times the traffic gives you 3,000 spans and still 8
+metric points, because metrics are aggregated *in the process* before they are
+shipped. That asymmetry is why you keep metrics at 100% and sample traces, and why
+the operating rule is: alert on metrics, debug on traces.
+</details>
+
+**Predict, then run.** The example puts `trace_id` on every span but deliberately
+keeps it off the metrics. What breaks if you add it as a metric attribute?
+
+<details><summary>▸ Answer</summary>
+
+Cardinality explosion. A metric time series is identified by its full attribute
+set, so a unique trace_id per request means one new time series per request:
+storage, memory in the exporting process, and your bill all grow with traffic,
+which is exactly what metrics exist to avoid. The same attribute on a span costs
+nothing extra, because a span *is* one event. The general rule: high-cardinality
+identifiers belong on spans and logs, never on metric dimensions.
+</details>
+
+**Do it.** Start the receiver (`python hands_on/otel_collector.py`), then run
+`python examples/09_otel_export.py --otlp`. Now delete the `wire.shutdown()` line
+in the example's OTLP branch and run it again. What arrives?
+
+<details><summary>▸ Answer</summary>
+
+Little or nothing. `BatchSpanProcessor` queues spans and exports them on an
+interval, so a short-lived process that exits without flushing takes its queue to
+the grave. In a long-running server you rarely notice, because the interval fires;
+in a script, a CI job, or a Lambda, it is the single most common cause of "my
+instrumentation doesn't work." Every OTel setup needs a shutdown hook.
+</details>
+
+**Recall.** After adopting OpenTelemetry and a backend, which sections of this repo
+have you made unnecessary, and which are still entirely your problem?
+
+<details><summary>▸ Answer</summary>
+
+Unnecessary: Sections 2 and 3, writing telemetry down and computing metrics from
+it. A backend does that at any volume, with retention and a query language you did
+not write.
+
+Still yours: Sections 4 through 10. Baselines and z-scores, input drift, the
+sampled judge, alert tuning, mining failures into eval cases. A backend stores and
+charts numbers; deciding that this week's numbers are *worse* than last week's, and
+that the difference is worth waking someone for, is judgement, and no wire protocol
+carries it. Some LLM-native platforms sell parts of that judgement layer, which is
+exactly the claim you are now equipped to evaluate rather than take on faith.
+</details>
+
+---
+
 ## Going further: Segmentation
 
 **Predict, then run.** `examples/08_segmentation.py` slows down one cohort
@@ -278,5 +340,5 @@ one group's experience really can diverge from another's, not every field availa
 **Done?** You've operated six weeks of one app's traffic, caught its drifts,
 graded its answers, and turned its failures into tests. The "Where to go next"
 section of the README maps each from-scratch layer here to its industrial
-counterpart (OpenTelemetry, Langfuse, Arize, Evidently, PagerDuty), same
-interfaces, bigger machinery.
+counterpart (Langfuse, Arize, Evidently, PagerDuty), same interfaces, bigger
+machinery, and Section 11 already made the OpenTelemetry half real.
