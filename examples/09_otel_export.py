@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from obs import otel, providers, simulate
 
-ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
+ap = argparse.ArgumentParser(description="Emit this repo's telemetry as real OpenTelemetry.")
 ap.add_argument("--otlp", action="store_true", help="export over real OTLP/HTTP")
 ap.add_argument("--console", action="store_true", help="use the SDK's console exporter")
 ap.add_argument("--endpoint", default=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", otel.DEFAULT_OTLP_ENDPOINT))
@@ -44,7 +44,9 @@ ap.add_argument("--capture-content", action="store_true",
                 help="also put question/answer text on spans (a PII decision, off by default)")
 args = ap.parse_args()
 
-otel.require()  # a clear install message beats an ImportError traceback
+# A clear install message beats an ImportError traceback. The wire path needs one
+# package more than the offline path, so we ask for exactly what this run will use.
+otel.require(otlp=args.otlp)
 
 records, _ = simulate.generate(7, requests_per_day=120)
 print(f"Simulated history: {len(records)} requests over 7 days.\n")
@@ -92,7 +94,7 @@ else:
     tokens = sum(s.attributes["gen_ai.usage.input_tokens"] + s.attributes["gen_ai.usage.output_tokens"]
                  for s in spans)
     print(f"  {n} requests  ->  {len(spans)} spans, {errors} marked ERROR, {tokens:,} tokens total")
-    print(f"\n  ... and the SAME traffic, as metrics (read straight back out of the SDK):\n")
+    print("\n  ... and the SAME traffic, as metrics (read straight back out of the SDK):\n")
     snapshot = bulk.metric_snapshot()
     for row in snapshot:
         keys = row["attributes"]
@@ -104,14 +106,17 @@ else:
         else:
             body = f"total={row['value']:<12.6f}" if row["unit"] == "USD" else f"total={row['value']:<12.0f}"
         print(f"    {row['name']:<34} {row['kind']:<10} {body:<36} {row['unit']:<10} [{label}]")
-    print(f"\n  {len(spans)} span events, versus {len(snapshot)} metric points. Ship 10x the traffic")
-    print("  and the left number grows 10x; the right one does not move.")
+    print(f"\n  {len(spans)} span events, versus {len(snapshot)} metric points. Ship 10x the")
+    print("  traffic and the left number grows 10x. The right one is bounded by the")
+    print("  number of distinct attribute combinations, not by request count: it moves")
+    print("  only when a new combination appears (a rarer outcome, another model).")
     bulk.shutdown()
     print("""
 That ratio is the whole design. Spans are one event per request: rich, sliceable,
 and priced per event, so at real volume you sample them. Metrics are aggregated
-in-process before they leave: 300 requests or 300 million, you ship the same few
-histograms, so you keep them at 100%. The rule of thumb that follows: **alert on
+in-process before they leave, and what leaves is one point per attribute
+combination: 300 requests or 300 million, you ship a handful of histograms, so you
+keep them at 100%. The rule of thumb that follows: **alert on
 metrics, debug on traces.** Note also that the metric attributes are a smaller set
 than the span attributes. Every distinct combination is a separate time series, so
 trace_id on a metric would be a cardinality explosion, while on a span it is free.""")
@@ -151,16 +156,16 @@ print("\n" + "=" * 72)
 print("4. THE WIRE")
 print("=" * 72)
 if not args.otlp:
-    print(f"""Nothing above touched the network; the exporters were in-memory. To send the
+    print("""Nothing above touched the network; the exporters were in-memory. To send the
 same telemetry over the real OTLP protocol, start a receiver in another terminal:
 
-    python hands_on/otel_collector.py         # a 150-line OTLP/HTTP server, no Docker
+    python hands_on/otel_collector.py         # a 200-line OTLP/HTTP server, no Docker
 
 then re-run this with --otlp:
 
     python examples/09_otel_export.py --otlp
 
-The receiver decodes the actual gzipped protobuf and prints what arrived. A real
+The receiver decodes the actual protobuf and prints what arrived. A real
 collector, or Jaeger, or a vendor endpoint, takes byte-for-byte the same payload:
 
     docker run -p 4318:4318 -p 16686:16686 jaegertracing/all-in-one
@@ -182,9 +187,13 @@ else:
 
     wire = otel.setup(exporter="otlp", endpoint=args.endpoint)
     sent = otel.replay(wire, batch, capture_content=args.capture_content)
-    print(f"Exporting {sent} spans, pipeline {wire.describe()}, as gzipped protobuf ...")
-    # shutdown() flushes: without it, the batch processor's queue dies with the
-    # process and your spans never leave. This is the #1 "my traces are missing" bug.
+    print(f"Exporting {sent} spans, pipeline {wire.describe()}, as gzipped protobuf")
+    print("(compression is off in this SDK by default; obs/otel.py turns it on, which")
+    print(" is worth roughly 7x on this payload, and the receiver checks the header)")
+    # shutdown() drains the batch queue. Python's SDK also registers an atexit
+    # hook, so a clean exit would flush anyway; the call matters for the exits
+    # that skip atexit (os._exit, SIGKILL, an OOM kill, a container stopped past
+    # its grace period) and for SDKs in other languages with no such hook.
     wire.shutdown()
     print("Flushed. Check the receiver's terminal: those spans crossed a socket.")
     print("""
