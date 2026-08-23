@@ -346,7 +346,7 @@ Only the URL and an auth header differ for a vendor. That interchangeability is
 the whole reason the standard exists, and it is why "we emit OpenTelemetry" is a
 decision you can make before you have picked a backend.
 
-### Three things that will bite you
+### Four things that will bite you
 
 - **The batch queue outlives your intentions.** Spans are batched, not sent as
   they end. Python's SDK registers an `atexit` hook, so a *clean* exit flushes
@@ -363,7 +363,6 @@ decision you can make before you have picked a backend.
   (OTel's own is `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`). Turning it
   on ships user text to a third-party store on someone else's retention schedule.
   Most teams enable it for a sampled slice, never for all traffic.
-
 - **Compression is off by default.** This SDK sends uncompressed protobuf unless
   you ask otherwise; [obs/otel.py](obs/otel.py) asks (`compression=Compression.Gzip`),
   which is worth about 7x on this payload. Telemetry is usually billed on ingest
