@@ -255,9 +255,11 @@ that produce, and how many **metric points** leave the process?
 300 spans (one event per request, and that number scales 1:1 with traffic) and 8
 metric points: one duration histogram, two token histograms (input and output),
 one cost counter, and four request counters, one per outcome/cache combination
-present in the data. Ten times the traffic gives you 3,000 spans and still 8
-metric points, because metrics are aggregated *in the process* before they are
-shipped. That asymmetry is why you keep metrics at 100% and sample traces, and why
+present in the data. Ten times the traffic gives you 3,000 spans and roughly the
+same 8 metric points, because a metric point is one per *attribute combination*,
+not one per request. Note "roughly": a combination that never occurred in the
+smaller sample (an error outcome, say) adds a point the first time it shows up, so
+the count is bounded by your attribute design rather than frozen. That asymmetry is why you keep metrics at 100% and sample traces, and why
 the operating rule is: alert on metrics, debug on traces.
 </details>
 
@@ -276,15 +278,29 @@ identifiers belong on spans and logs, never on metric dimensions.
 
 **Do it.** Start the receiver (`python hands_on/otel_collector.py`), then run
 `python examples/09_otel_export.py --otlp`. Now delete the `wire.shutdown()` line
-in the example's OTLP branch and run it again. What arrives?
+in the example's OTLP branch and run it again. Predict first: what arrives? Then
+add `os._exit(0)` as the last line (with `import os` at the top) and run it a
+third time. What arrives now?
 
 <details><summary>▸ Answer</summary>
 
-Little or nothing. `BatchSpanProcessor` queues spans and exports them on an
-interval, so a short-lived process that exits without flushing takes its queue to
-the grave. In a long-running server you rarely notice, because the interval fires;
-in a script, a CI job, or a Lambda, it is the single most common cause of "my
-instrumentation doesn't work." Every OTel setup needs a shutdown hook.
+Run two: **everything still arrives.** Spans really do sit in a batch queue, but
+Python's `TracerProvider` and `MeterProvider` both default to
+`shutdown_on_exit=True`, which registers an `atexit` hook, and a normally-exiting
+process runs it. This is worth knowing precisely because so much writing about
+OTel (including an earlier draft of this repo) says the batch is simply lost.
+
+Run three: **nothing arrives.** `os._exit()` terminates the process without
+running `atexit` handlers, so the queue dies with it. That is the real shape of
+the hazard, and the list of things that skip `atexit` is longer than it looks:
+`os._exit`, a SIGKILL, an OOM kill, a container stopped past its grace period, a
+forked worker that never runs the parent's handlers, and SDKs in other languages
+that register no such hook at all. Calling `shutdown()` explicitly is how you stop
+depending on which kind of exit you got.
+
+The general habit this exercise is really teaching: when someone tells you a
+failure mode exists, reproduce it before you believe the mechanism. The failure
+was real; the stated cause was wrong, and only running it shows the difference.
 </details>
 
 **Recall.** After adopting OpenTelemetry and a backend, which sections of this repo
