@@ -7,7 +7,7 @@
 Monitoring isn't for admiring dashboards; it's for turning what production teaches
 you back into fixes and tests. Every refusal, thumbs-down, and terse answer is a
 free, real-user-labelled example of something you got wrong. This closes the
-feedback flywheel from the Evals dive: mine the failures, cluster them, and emit
+feedback loop from the Evals dive: mine the failures, cluster them, and emit
 them as candidate eval cases (obs/mining.py).
 
 Three moves:
@@ -49,5 +49,5 @@ silent = mining.unrated_but_failing(records)
 print(f"\n{silent} of {len(fails)} failures had NO user feedback at all.")
 print("Thumbs are sparse. Most failures are silent, which is exactly why you")
 print("monitor proxies (refusals, drift, judge samples) instead of waiting for a")
-print("thumbs-down. The flywheel: these candidates become regression tests (Evals),")
+print("thumbs-down. The loop: these candidates become regression tests (Evals),")
 print("and the mobile-app cluster becomes a KB article or a scoped refusal.")
