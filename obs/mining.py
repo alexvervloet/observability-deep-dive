@@ -7,7 +7,7 @@ them. Every refusal, every thumbs-down, every terse answer is a labelled example
 of something your system got wrong, and it arrived for free, from a real user,
 which is worth more than any case you'd invent.
 
-This module closes the loop (the "feedback flywheel"):
+This module closes the feedback loop:
 
   1. **Surface** the failures (refusals, negative feedback, suspiciously short
      answers) out of the traffic.
