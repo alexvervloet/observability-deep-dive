@@ -11,7 +11,7 @@ and a handful of outcome flags. That's the point: this repo consumes exactly
 what a real traced app already produces. We store one JSON object per line
 (**JSONL**), which is what every log pipeline in the world speaks.
 
-The crucial honesty of this file: **a real production log does not contain a
+The honesty that matters in this file: **a real production log does not contain a
 ground-truth "was this answer good?" label.** If it did, monitoring would be
 trivial. So a record here carries only what a running system actually knows at
 request time: the question, what it cost, how long it took, whether it refused.
