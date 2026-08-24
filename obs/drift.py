@@ -5,7 +5,7 @@ Your eval passed on launch day against the questions you had then. Six weeks
 later, are users still asking those questions? **Input drift** is the shift in the
 distribution of what comes in, and it's dangerous precisely because nothing
 errors. The model dutifully answers questions it was never good at; your latency
-and error dashboards stay green while the answers quietly get worse.
+and error dashboards stay green while the answers get worse.
 
 Three ways to see it, cheapest first:
 
