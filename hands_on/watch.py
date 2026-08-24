@@ -172,7 +172,7 @@ def print_dashboard(records, rows, incidents, fired, baseline_days):
     note = _c("correctly silent", "32") if not trend_fired else _c("FALSE ALARM", "1;31")
     print(f"  {'(latency regression)':<20} guardrail on the 1-day spike → {note}")
 
-    # --- the flywheel --------------------------------------------------------
+    # --- the feedback loop ---------------------------------------------------
     fails = mining.failures(records)
     top = mining.cluster(fails, records, top=1)
     print(_c("\nTOP FAILURE CLUSTER TO FIX  (mine → eval → fix)", "1"))
