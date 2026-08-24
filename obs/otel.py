@@ -199,7 +199,7 @@ class Telemetry:
 
         Asserting on these is how you keep instrumentation from rotting. Rename an
         attribute and nothing throws: the code runs, the spans flow, and every
-        dashboard and alert keyed to the old name goes quietly blank. See
+        dashboard and alert keyed to the old name goes blank. See
         tests/test_otel.py, which pins the conventional names, the status mapping,
         the PII default, and the metric shape for exactly that reason.
         """
