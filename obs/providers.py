@@ -124,7 +124,7 @@ def ensure_ready() -> None:
 # of the word), then embed a text as the normalized sum of its word vectors. Two
 # questions that share words land near each other; a question full of NEW words
 # (a topic the app has never seen) lands far from the baseline cloud. That is
-# exactly the signal input-drift detection looks for: and here it's real, not
+# exactly the signal input-drift detection looks for, and here it's real, not
 # faked: the vectors move because the words did.
 
 _EMBED_DIM = 64
