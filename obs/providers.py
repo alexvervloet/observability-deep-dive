@@ -19,7 +19,7 @@ Three stacks, exactly like the siblings:
   PROVIDER=claude ->  claude-haiku-4-5 judge (embeddings still use OPENAI_API_KEY)
 
 Nothing in the core path (reading logs, metrics, baselines, alerting, the
-dashboard) touches this file. Only the two optional model-backed sections do 
+dashboard) touches this file. Only the two optional model-backed sections do,
 and both work fully on the mock.
 """
 
