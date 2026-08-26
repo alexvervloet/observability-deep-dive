@@ -139,7 +139,7 @@ _DRIFT_QUESTIONS = [
 ]
 
 # The customer cohorts every request belongs to, and their share of traffic. A
-# segment-scoped incident (segment_outage) hits only one of these: and because the
+# segment-scoped incident (segment_outage) hits only one of these, and because the
 # affected cohort is a minority, it can stay hidden in the global average.
 _SEGMENTS = [("free", 0.55), ("pro", 0.30), ("enterprise", 0.15)]
 
