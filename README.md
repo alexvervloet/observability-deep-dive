@@ -226,6 +226,15 @@ The example ends on an honest caveat. Most failures are silent, with no thumbs a
 you cannot wait for feedback to find them. That is exactly why you monitor proxies like
 refusals, drift, and judge samples in the first place.
 
+There is a second caveat this dive cannot demonstrate, because its traffic comes from a
+simulator. A portfolio project or a pre-launch system has no traffic to mine at all, and
+the advice to build your eval set from production failures assumes a production you may
+not have yet. [model-swap](https://github.com/alexvervloet/model-swap) is what that
+situation looks like: the corpus and the questions are authored, stratified on purpose,
+and the gaps are recorded so a refusal can be checked rather than guessed at. Authoring
+is slower and narrower than mining, and it is what you do until there is traffic worth
+mining.
+
 ---
 
 ## 9. The classic-MLOps vocabulary, and why half of it doesn't fit
