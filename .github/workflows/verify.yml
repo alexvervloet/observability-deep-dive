@@ -1,0 +1,66 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # The repo claims 3.10+. The matrix is where that claim is checked.
+      - run: python check_setup.py
+      - run: python -m compileall -q obs examples hands_on tests
+
+      # -O strips assertions, so this also proves nothing enforces behavior with one.
+      - run: python -O -m unittest discover -s tests -v
+
+      - name: Run every lesson
+        run: |
+          for example in examples/[0-9][0-9]_*.py; do
+            echo "--- $example"
+            python -W error "$example"
+          done
+
+      - name: Run the capstone, and prove a clean history stays quiet
+        run: |
+          python hands_on/watch.py
+          python hands_on/watch.py --healthy | tee healthy.txt
+          grep -q "no alerts, all clear" healthy.txt
+
+      - name: The HTML dashboard must be self-contained
+        run: |
+          python hands_on/watch.py --html report.html
+          # A dashboard that fetches from a CDN is not offline, whatever the README says.
+          if grep -qiE '<script|https?://' report.html; then
+            echo "report.html pulls in external resources or script"
+            exit 1
+          fi
+
+      - name: OTLP must cross a real socket
+        run: |
+          python hands_on/otel_collector.py > collector.log 2>&1 &
+          for _ in $(seq 1 30); do
+            grep -q "listening on" collector.log && break
+            sleep 1
+          done
+          python examples/09_otel_export.py --otlp
+          sleep 3
+          grep -q "300 span(s)" collector.log
+          grep -q "8 point(s)" collector.log
