@@ -103,6 +103,18 @@ def handle_traces(body: bytes, verbose: bool) -> None:
                 print(f"   … and {len(spans) - 3} more (pass --verbose to print every span)")
 
 
+def _point_count(metric) -> int:
+    """Data points carried by one metric: one per distinct attribute combination."""
+    kind = metric.WhichOneof("data")
+    if kind == "histogram":
+        return len(metric.histogram.data_points)
+    if kind == "sum":
+        return len(metric.sum.data_points)
+    if kind == "gauge":
+        return len(metric.gauge.data_points)
+    return 0
+
+
 def handle_metrics(body: bytes, verbose: bool) -> None:
     req = ExportMetricsServiceRequest()
     req.ParseFromString(body)
@@ -111,7 +123,12 @@ def handle_metrics(body: bytes, verbose: bool) -> None:
         for scope_metrics in resource_metrics.scope_metrics:
             metrics = list(scope_metrics.metrics)
             TOTALS["metrics"] += len(metrics)
-            print(f"\n📈 {len(metrics)} metric(s) from service={service}")
+            # Two different counts, and §11 turns on telling them apart. A metric
+            # is one instrument; a *point* is one per attribute combination, and
+            # the point count is the one that stays flat as traffic grows.
+            points = sum(_point_count(m) for m in metrics)
+            print(f"\n📈 {len(metrics)} metric(s), {points} point(s), "
+                  f"from service={service}")
             for m in metrics:
                 kind = m.WhichOneof("data")
                 if kind == "histogram":
