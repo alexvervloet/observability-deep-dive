@@ -376,8 +376,8 @@ decision you can make before you have picked a backend.
 Instrumentation also rots in a way nothing else in this repo does. Rename an attribute and
 no exception is raised, the spans keep flowing, and every dashboard and alert keyed to the
 old name goes blank with nothing to explain it. That is what
-[tests/test_otel.py](tests/test_otel.py) is for, and it is the one test in this repo worth
-copying into your own.
+[tests/test_otel.py](tests/test_otel.py) is for, and it is the test here worth copying
+into your own project.
 
 ```bash
 python -m unittest discover -s tests
@@ -386,6 +386,12 @@ python -m unittest discover -s tests
 It pins the conventional attribute names, the low-cardinality span name, the error status
 mapping, the PII default, and the metric shape. It has already paid for itself once, by
 failing on a claim the prose in this section had made three times.
+
+Its companion, [tests/test_detection.py](tests/test_detection.py), pins the other kind of
+claim: the detection lags, the silent guardrail, and the cluster size that this README and
+the chapter both quote at you. Retuning a detector is allowed; retuning it without updating
+the sentence that quotes it is not. Both suites, plus every example and the OTLP round
+trip, run on push in [.github/workflows/verify.yml](.github/workflows/verify.yml).
 
 > **OTel is transport, not judgement.** Adopting it replaces §2 and §3 of this repo,
 > writing telemetry down and computing metrics from it yourself. It does not replace §4
@@ -484,6 +490,7 @@ hands_on/
   otel_collector.py         ← a 200-line OTLP/HTTP receiver, so the wire works offline
 tests/
   test_otel.py              ← pins the span/metric contract: names, status, PII default
+  test_detection.py         ← pins the numbers this README quotes: lags, guardrail, clusters
 examples/
   00_generate_traffic.py    ← the log history that makes it all runnable (no key)
   01_metrics_from_logs.py   ← logs → the numbers you watch (p50/p95, cost, rates)
