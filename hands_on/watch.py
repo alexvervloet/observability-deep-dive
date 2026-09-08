@@ -112,6 +112,30 @@ def run_alerts(rows):
     return fired
 
 
+def grade(incidents, fired, days):
+    """Score the detectors against the answer key: one row per injected incident,
+    plus whether the latency *trend* guardrail stayed silent on the 1-day spike.
+
+    Split out of the dashboard so a test can assert on it. The claims this repo
+    makes about detection lag are prose until something checks them, and prose
+    cannot fail (see LESSONS.md).
+    """
+    day_index = {d: i for i, d in enumerate(days)}
+    graded = []
+    for inc in incidents:
+        matches = [a for a in fired if a["kind"] == inc.kind]
+        first = min(matches, key=lambda a: a["fired_on"]) if matches else None
+        graded.append({
+            "kind": inc.kind,
+            "start_day": inc.start_day,
+            "caught": first is not None,
+            "lag": day_index[first["fired_on"]] - inc.start_day if first else None,
+            "via": first["label"] if first else None,
+        })
+    trend_fired = any(a["label"] == "latency regression" for a in fired)
+    return graded, trend_fired
+
+
 def print_dashboard(records, rows, incidents, fired, baseline_days):
     days = [r["day"] for r in rows]
     total_cost = sum(r["cost_usd_total"] for r in rows)
@@ -157,18 +181,14 @@ def print_dashboard(records, rows, incidents, fired, baseline_days):
 
     # --- detection report: grade detectors vs ground truth ------------------
     print(_c("\nDETECTION REPORT  (detectors vs the ground-truth incidents)", "1"))
-    day_index = {d: i for i, d in enumerate(days)}
-    for inc in incidents:
-        matches = [a for a in fired if a["kind"] == inc.kind]
-        if matches:
-            first = min(matches, key=lambda a: a["fired_on"])
-            lag = day_index[first["fired_on"]] - inc.start_day
-            verdict = _c(f"CAUGHT (lag {lag}d via {first['label']})", "32")
+    graded, trend_fired = grade(incidents, fired, days)
+    for row in graded:
+        if row["caught"]:
+            verdict = _c(f"CAUGHT (lag {row['lag']}d via {row['via']})", "32")
         else:
             verdict = _c("MISSED", "1;31")
-        print(f"  {inc.kind:<20} started day {inc.start_day:<3} → {verdict}")
+        print(f"  {row['kind']:<20} started day {row['start_day']:<3} → {verdict}")
     # The trend guardrail should have stayed silent on the transient spike.
-    trend_fired = any(a["label"] == "latency regression" for a in fired)
     note = _c("correctly silent", "32") if not trend_fired else _c("FALSE ALARM", "1;31")
     print(f"  {'(latency regression)':<20} guardrail on the 1-day spike → {note}")
 
