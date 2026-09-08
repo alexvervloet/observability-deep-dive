@@ -16,9 +16,9 @@ An LLM app mostly doesn't have those handles, and pretending it does is the trap
 this sidebar exists to name:
 
   • There's no feature vector to drift; the input is free text. (The honest analog
-    is embedding drift, Section 3: same idea, fuzzier.)
+    is embedding drift, Section 5: same idea, fuzzier.)
   • Labels rarely arrive. Nobody tells you the "right" support answer next week, so
-    you can't compute accuracy over time. You sample a judge (Section 4) instead.
+    you can't compute accuracy over time. You sample a judge (Section 6) instead.
   • "Concept drift" (the input→output relationship changes) has no clean analog;
     the closest thing is your provider silently swapping the model under you.
   • LLM "explainability" is a research field (probing, attention, mechanistic
@@ -39,12 +39,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from obs import drift
 
 MAP = [
-    ("Feature drift (PSI/KS on columns)", "Embedding drift on the input text (§3)"),
-    ("Concept drift (X→y relationship)",  "Silent provider/model swap; prompt changes (§4)"),
-    ("Accuracy/AUC on arriving labels",   "Sampled LLM-as-judge + sparse thumbs (§4, §6)"),
+    ("Feature drift (PSI/KS on columns)", "Embedding drift on the input text (§5)"),
+    ("Concept drift (X→y relationship)",  "Silent provider/model swap; prompt changes (§6)"),
+    ("Accuracy/AUC on arriving labels",   "Sampled LLM-as-judge + sparse thumbs (§6, §8)"),
     ("SHAP/LIME feature attributions",    "Citations & retrieved-context inspection (RAG dive)"),
     ("Prediction-distribution monitoring", "Refusal rate, answer length, judge-score trend"),
-    ("Label lag / delayed ground truth",  "Ground truth may NEVER arrive; mine failures (§6)"),
+    ("Label lag / delayed ground truth",  "Ground truth may NEVER arrive; mine failures (§8)"),
 ]
 print(f"{'Classic tabular-MLOps concept':<38}  LLM-app analog that actually works")
 print("-" * 84)
