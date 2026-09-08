@@ -137,11 +137,12 @@ python examples/01_metrics_from_logs.py
 
 ## 4. Baselines and trends, because a number means nothing alone
 
-"Cost per request is $0.00006" tells you nothing. "$0.00006, up from a $0.00003 baseline,
-that's +120σ" is an incident. [obs/alerts.py](obs/alerts.py) learns what normal looked like
-from a clean baseline window, then scores every new day as a z-score: how many baseline
-standard deviations from normal. It's unitless, so the same "3σ is weird" rule works for
-latency, cost, and refusals alike, with no hand-tuned threshold per metric.
+"Cost per request is $0.000107" tells you nothing. "$0.000107, up from a $0.000055
+baseline, that's +115σ" is an incident. [obs/alerts.py](obs/alerts.py) learns what
+normal looked like from a clean baseline window, then scores every new day as a
+z-score: how many baseline standard deviations from normal. It's unitless, so the
+same "3σ is weird" rule works for latency, cost, and refusals alike, with no
+hand-tuned threshold per metric.
 
 ```bash
 python examples/02_baselines_trends.py
@@ -213,7 +214,7 @@ python examples/05_alerting.py
 Monitoring isn't for admiring dashboards. It's for turning what production teaches you back
 into fixes and tests. Every refusal, thumbs-down, and terse answer is a free,
 real-user-labelled example of something you got wrong. [obs/mining.py](obs/mining.py) pulls
-them out, clusters them by theme so "scattered failures" becomes "904 of them are the
+them out, clusters them by theme so "scattered failures" becomes "900 of them are the
 mobile app you don't support", and emits them as candidate eval cases in the Evals dive's
 JSONL shape, ready for a human to write the gold answer and drop into the regression
 suite.
@@ -278,7 +279,7 @@ python hands_on/watch.py --html report.html
 ```
 
 On the default history it catches all four incidents: the latency spike at 0 days' lag,
-input drift and cost creep at about 2 days, the quality regression at about 4, while the
+input drift, cost creep, and the quality regression at 2 days each, while the
 latency regression detector correctly stays silent on the one-day spike. On `--healthy` it
 fires nothing. That gap, catching real incidents while ignoring noise, is the entire craft,
 and it is a tuning choice you can see and change.
@@ -412,7 +413,7 @@ python examples/08_segmentation.py
 
 The example runs an enterprise-only latency regression that is 15% of traffic. The global
 p95 detector stays silent, because the outage hides inside normal noise, while the
-enterprise cohort's own p95 triples and alerts. The fix is one line of discipline.
+enterprise cohort's own p95 nearly quadruples and alerts. The fix is one line of discipline.
 `metrics.daily_by_segment` computes every series per cohort and you run the same detectors
 on each. There is an honest catch, which the example ends on. Smaller cohorts are noisier,
 so slice on the few dimensions that carry different risk rather than every field you
