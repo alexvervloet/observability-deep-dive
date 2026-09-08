@@ -47,6 +47,6 @@ print("\nThe z-score is flat through the healthy weeks, then climbs steadily. Th
 print("steadiness is the tell of a real regression rather than a noisy day. But a")
 print("rising z alone still isn't an alert: you have to decide *how high, for how")
 print("long* before you page someone. That decision, and its unavoidable tradeoff")
-print("between false alarms and detection lag, is Section 5.")
+print("between false alarms and detection lag, is Section 7.")
 print("\nFirst, two kinds of regression this cost trend can't see: the questions")
-print("changing (Section 3) and the answers getting worse (Section 4).")
+print("changing (Section 5) and the answers getting worse (Section 6).")
