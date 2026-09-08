@@ -166,7 +166,7 @@ class Incident:
     end_day: int  # inclusive; the last day it's active
     metric: str  # the operational signal it shows up in, for grading detectors
     description: str
-    segment: str = ""  # for segment_outage: which cohort is affected (Section 11)
+    segment: str = ""  # for segment_outage: which cohort is affected (the segmentation section)
 
     def active_on(self, day_index: int) -> bool:
         return self.start_day <= day_index <= self.end_day
@@ -247,7 +247,7 @@ def generate(
             # A segment-scoped outage: only the affected cohort's requests slow down
             # (a mis-provisioned backend for that plan). Because the cohort is a
             # minority, the *global* p95 barely moves while the cohort's own p95
-            # screams, which is the whole lesson of Section 11.
+            # screams, which is the whole lesson of examples/08_segmentation.py.
             seg_hit = outage is not None and segment == outage.segment
             seg_lat_mult = (1.0 + 2.4 * outage.ramp(d)) if (outage is not None and seg_hit) else 1.0
 
