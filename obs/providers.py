@@ -157,7 +157,7 @@ def _mock_embed(text: str) -> list[float]:
 # A transparent rule-based stand-in for an LLM-as-judge. It rewards concrete,
 # grounded help (steps, specific settings paths, numbers) and penalizes the
 # hallmarks of a degraded answer (a bare refusal, empty text). It's crude on
-# purpose: the point is that when the answers genuinely get worse (Section 5's
+# purpose: the point is that when the answers genuinely get worse (Section 6's
 # injected quality regression makes them shorter and more evasive), a cheap proxy
 # *sees* it. A real deployment swaps this for a real model via the same function.
 
