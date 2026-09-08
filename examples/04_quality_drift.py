@@ -4,7 +4,7 @@
 
     python examples/04_quality_drift.py            # offline (mock judge)
 
-Input drift (Section 3) is users changing. This is the provider changing under
+Input drift (Section 5) is users changing. This is the provider changing under
 you: a silent model swap around day 28 makes answers terser and more evasive, then
 it's rolled back around day 35. The questions are identical; the *answers* got
 worse. Latency, cost, and error rate never move; the only signal is the content.
