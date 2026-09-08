@@ -75,7 +75,7 @@ you want the price of the work, undiluted by how often you skipped the work.
 
 **Predict, then run.** `examples/02_baselines_trends.py` prints a z-score for cost
 per request. During the healthy weeks it hovers near zero; once cost creep starts it
-climbs past 100. Why so *huge*, and is a z of 120 a bug?
+climbs past 100. Why so *huge*, and is a z of 115 a bug?
 
 <details><summary>▸ Answer</summary>
 
@@ -332,7 +332,7 @@ exactly the claim you are now equipped to evaluate rather than take on faith.
 
 The global detector stays silent. The enterprise slowdown, diluted across the 85%
 of traffic that's fine, keeps the overall p95 inside its normal noise band (it never
-reaches a persistent 3σ). The enterprise cohort's *own* p95 roughly triples and
+reaches a persistent 3σ). The enterprise cohort's *own* p95 nearly quadruples and
 alerts loudly. Same metric, same detector; the only difference is what you grouped
 by. That gap is the whole point: an aggregate dashboard is necessary but not
 sufficient.
