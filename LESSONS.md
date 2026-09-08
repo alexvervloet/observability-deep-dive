@@ -93,3 +93,29 @@ the count "does not move."
 Next time: write the assertion for a claim the prose already makes. The prose had
 been read several times by then and the error survived every reading, because
 prose cannot fail.
+
+## 2026-09-08: renumbering the README broke fourteen references nothing checked
+
+Expected: adding the OpenTelemetry section as §11 was an append. The sections
+before it kept their content, so their numbers should have kept their meaning.
+
+Actual: the OTel section took the number the segmentation section had been using,
+and the sections between metrics and the capstone all shifted by two. Fourteen
+cross-references in `examples/` and `obs/` still pointed at the old scheme, so
+"the same event Section 6 sees from the other side" sent a reader to the sampled
+judge instead of to mining. EXERCISES.md and the parent repo's glossary had both
+been updated; only the references living inside code comments and print
+statements were missed, because they are the ones no reader of the README ever
+sees next to the thing they name.
+
+Four numeric claims had drifted the same way. The detection lag for the quality
+regression was quoted as "about 4" in both the README and the chapter, which was
+true when the detector ran at persistence=5 and became wrong when it was retuned
+to 3. The mining cluster was quoted at 904 and prints 900. The cost baseline was
+quoted at half its actual value.
+
+Next time: a section number is an identifier, and renumbering is a rename. Grep
+the whole repo for the old identifiers, not just the prose files. Better, do what
+`tests/test_detection.py` now does and assert the quoted numbers, because the
+previous lesson in this file already said prose cannot fail and the repo went on
+to prove it four more times.
