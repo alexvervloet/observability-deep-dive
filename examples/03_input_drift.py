@@ -17,7 +17,7 @@ Three lenses, cheapest first (obs/drift.py):
   2. **Embedding drift**: how far each day's questions sit, on average, from the
      baseline's center of mass *in meaning*. Catches drift even in ordinary words.
   3. **PSI**: the classic MLOps statistic for "how much did this distribution
-     move?", here on question length. You'll meet PSI everywhere (Section 7).
+     move?", here on question length. You'll meet PSI everywhere (Section 9).
 
 Uses the offline mock embeddings (words hashed to stable vectors), so it runs with
 no key. Flip PROVIDER=openai to measure drift with real embeddings; the numbers
@@ -64,6 +64,6 @@ print("  rule of thumb:  <0.1 stable · 0.1–0.25 moderate shift · >0.25 major
 
 print("\nAll three light up in the back half: new words, questions drifting away in")
 print("meaning, a shifted length distribution: the mobile-app questions arriving.")
-print("This is the same event Section 6 sees from the other side, as a cluster of")
+print("This is the same event Section 8 sees from the other side, as a cluster of")
 print("failures worth turning into eval cases. Next, the subtler cousin: the inputs")
 print("stay the same but the *answers* get worse.")
