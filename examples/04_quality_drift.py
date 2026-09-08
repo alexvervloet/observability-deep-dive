@@ -31,6 +31,7 @@ from dotenv import load_dotenv
 from obs import judge, metrics, providers, simulate
 
 load_dotenv()
+providers.ensure_ready()  # no-op on the mock; a clear error under PROVIDER_STRICT=1
 print(f"Judge via: {providers.describe()}\n")
 
 records, _ = simulate.generate()
