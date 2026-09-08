@@ -35,6 +35,7 @@ from obs import drift, providers, simulate
 from obs.logs import by_day
 
 load_dotenv()
+providers.ensure_ready()  # no-op on the mock; a clear error under PROVIDER_STRICT=1
 print(f"Embeddings via: {providers.describe()}\n")
 
 records, _ = simulate.generate()
