@@ -27,8 +27,9 @@ operate the next six weeks of them. Every log record here has the same shape Pro
 produces.
 
 Like its siblings, walk through it rather than reading it. Each section ends with something
-to run, all of it offline and free. And [EXERCISES.md](EXERCISES.md) has a predict-then-run
-prompt for each section.
+to run, all of it offline and free. [TEXTBOOK.md](TEXTBOOK.md) is the lecture that goes
+with this lab manual, [EXERCISES.md](EXERCISES.md) has a predict-then-run prompt for each
+section, and [LESSONS.md](LESSONS.md) records what surprised us while building it.
 
 ---
 
@@ -464,7 +465,9 @@ watch, built from the handles you actually have.
 ```
 check_setup.py              ← run first: verifies Python, packages, provider
 README.md                   ← this guide
+TEXTBOOK.md                 ← the lecture (Chapter 16)
 EXERCISES.md                ← predict-then-run prompts, one per section
+LESSONS.md                  ← what surprised us while building this
 obs/                        ← the from-scratch observability stack (read it!)
   simulate.py               ← the traffic generator: weeks of logs + injected incidents
   logs.py                   ← the LogRecord shape + JSONL load/save
@@ -541,6 +544,7 @@ a real capstone.
 - [Context Engineering](https://github.com/alexvervloet/context-engineering-deep-dive): manage what's in the window, with memory, compaction, and assembly
 - [AI Data Engineering](https://github.com/alexvervloet/ai-data-engineering-deep-dive): the corpus behind the index, with versions, lineage, ACLs, and deletes
 - [Multimodal](https://github.com/alexvervloet/multimodal-deep-dive): images and audio as well as text
+- [ML Foundations for AI Engineers](https://github.com/alexvervloet/ml-foundations-for-ai-engineers): the numeric contracts under the model, in runnable NumPy and PyTorch
 - [Fine-tuning](https://github.com/alexvervloet/fine-tuning-deep-dive): teach a model new behavior by example
 - [MCP](https://github.com/alexvervloet/mcp-deep-dive): serve tools, data, and prompts to any LLM over a standard protocol
 - [Local Models](https://github.com/alexvervloet/local-models-deep-dive): run open-weight models on your own machine
@@ -551,6 +555,7 @@ a real capstone.
 - [GenAI Security](https://github.com/alexvervloet/genai-security-deep-dive): treat the model as an untrusted principal, and put identity, supply chain, isolation, budgets, and release gates around it
 - [Inference Platform Engineering](https://github.com/alexvervloet/inference-platform-deep-dive): turn finite GPU memory and a request queue into latency, throughput, and a fleet size you can defend
 - [Testing & Delivery](https://github.com/alexvervloet/testing-and-delivery-deep-dive): decide whether a build is fit to promote, using evidence, gates, staged rollout, and rollback
+- [Structured Data + AI](https://github.com/alexvervloet/structured-data-ai-deep-dive): ask a database questions in English, then do the work that makes the answers trustworthy
 - [Professional Tools](https://github.com/alexvervloet/professional-tools-deep-dive): rebuild each hand-written piece with the tool professionals reach for, and measure both
 
 And the whole series lands in one codebase in the
