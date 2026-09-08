@@ -41,7 +41,7 @@ for row in rows[::4]:
 
 print("\nThings you can already see by eye (and will detect automatically next):")
 print("  • p95 runs well above p50: the latency tail is real, and mostly stable.")
-print("  • one day's p95 jumps far above the rest: a transient spike (Section 5).")
+print("  • one day's p95 jumps far above the rest: a transient spike (Section 7).")
 print("  • refuse creeps up in the back half: users asking things we can't answer.")
 print("  • $/req roughly doubles later on: tokens per call are growing (cost creep).")
 print("\nSeeing it by eye doesn't scale to 500 metrics. Sections 4–5 make it a number")
