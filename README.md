@@ -10,7 +10,7 @@ no Grafana. Just enough code to see how each piece works. Then at the end you em
 telemetry as real OpenTelemetry over OTLP, in §11, so you can see exactly which part of
 what you built the industry standard replaces and which part it doesn't.
 
-Here is what makes this repo work. It runs completely offline on synthetic log history,
+Here's what makes this repo work. It runs completely offline on synthetic log history,
 with no API key. Everything else in the series measures your app at a single point in time.
 This repo needs history, so instead of a live model it ships a deterministic traffic
 simulator that generates six weeks of realistic request logs with real incidents buried
@@ -85,7 +85,7 @@ Pick your stack with `PROVIDER` in `.env`.
 The provider only matters for two optional, model-backed sections: the sampled quality
 judge in §6 and real embeddings in §5. Every other section, meaning reading logs,
 baselines, alerting, mining, and the dashboard, is pure log analysis and runs identically
-on all three. That is the point. Observability is something you build around whatever the
+on all three. That's the point. Observability is something you build around whatever the
 model happens to be.
 
 > **Everything in this repo runs offline.** No key, no network, no cost. The traffic
@@ -97,7 +97,7 @@ model happens to be.
 
 ## 2. The traffic simulator, six weeks of history on demand
 
-You cannot learn to spot drift in a single request. You need history. So this repo's
+You can't learn to spot drift in a single request. You need history. So this repo's
 equivalent of Production's mock model is a deterministic generator of log history,
 [obs/simulate.py](obs/simulate.py). `generate()` returns 42 days of realistic request logs
 for the support assistant, and separately the ground-truth incident schedule it buried
@@ -117,7 +117,7 @@ python examples/00_generate_traffic.py
 ```
 
 One thing to notice. A log record has the question, cost, latency, and whether it refused,
-and no "was this answer good?" field. That label does not exist in production, which is the
+and no "was this answer good?" field. That label doesn't exist in production, which is the
 entire challenge of everything that follows.
 
 ---
@@ -175,7 +175,7 @@ never move. Quality is the one metric that isn't free to measure, so you sample 
 answers per day and score them with a judge, either the mock's rule-based scorer or a real
 LLM-as-judge from the Evals dive. And because a mean over 20 sampled answers is a point
 estimate, [obs/judge.py](obs/judge.py) reports it with a confidence interval, since a dip
-inside the error bars is not a regression yet.
+inside the error bars isn't a regression yet.
 
 ```bash
 python examples/04_quality_drift.py      # offline (mock judge)
@@ -205,7 +205,7 @@ python examples/05_alerting.py
 > `z_threshold` and `persistence` trades one against the other. Tighten to catch incidents
 > faster and you page on noise. Loosen to stop the noise and you catch them later. The
 > example makes that tradeoff visible, then picks an operating point where the transient
-> latency blip does not page as a trend while the multi-week drifts do, with an honest
+> latency blip doesn't page as a trend while the multi-week drifts do, with an honest
 > detection lag as the price.
 
 ---
@@ -225,16 +225,16 @@ python examples/06_mining_traffic.py
 ```
 
 The example ends on an honest caveat. Most failures are silent, with no thumbs at all, so
-you cannot wait for feedback to find them. That is exactly why you monitor proxies like
+you can't wait for feedback to find them. That's exactly why you monitor proxies like
 refusals, drift, and judge samples in the first place.
 
-There is a second caveat this dive cannot demonstrate, because its traffic comes from a
+There's a second caveat this dive can't demonstrate, because its traffic comes from a
 simulator. A portfolio project or a pre-launch system has no traffic to mine at all, and
 the advice to build your eval set from production failures assumes a production you may
 not have yet. [model-swap](https://github.com/alexvervloet/model-swap) is what that
 situation looks like: the corpus and the questions are authored, stratified on purpose,
 and the gaps are recorded so a refusal can be checked rather than guessed at. Authoring
-is slower and narrower than mining, and it is what you do until there is traffic worth
+is slower and narrower than mining, and it's what you do until there's traffic worth
 mining.
 
 ---
@@ -253,9 +253,9 @@ python examples/07_classic_mlops_sidebar.py
 ```
 
 The example maps each classic term to the LLM-app analog that actually works, then runs
-PSI in its native habitat, a numeric feature, so you have seen the real thing. Learn the
+PSI in its native habitat, a numeric feature, so you've seen the real thing. Learn the
 vocabulary, because you'll be asked it. Don't buy a vendor's "LLM explainability". Attention
-weights are not SHAP values.
+weights aren't SHAP values.
 
 ---
 
@@ -283,7 +283,7 @@ On the default history it catches all four incidents: the latency spike at 0 day
 input drift, cost creep, and the quality regression at 2 days each, while the
 latency regression detector correctly stays silent on the one-day spike. On `--healthy` it
 fires nothing. That gap, catching real incidents while ignoring noise, is the entire craft,
-and it is a tuning choice you can see and change.
+and it's a tuning choice you can see and change.
 
 ---
 
@@ -291,8 +291,8 @@ and it is a tuning choice you can see and change.
 
 Everything so far analyzed logs. This section emits them, in the format the industry
 actually ships: real OpenTelemetry spans and metrics, over the real OTLP protocol, from the
-same `LogRecord` you have been reading all along. [obs/otel.py](obs/otel.py) is the whole
-integration, and it is smaller than any detector in this repo.
+same `LogRecord` you've been reading all along. [obs/otel.py](obs/otel.py) is the whole
+integration, and it's smaller than any detector in this repo.
 
 ```bash
 pip install -r requirements.txt          # the OTel extras are optional, and in there
@@ -306,13 +306,13 @@ Three things the example makes concrete:
 - **What a span actually contains.** The `gen_ai.*` attribute names are
   **semantic conventions**, so an LLM-aware backend renders a model call view
   without being told anything about your app. The `app.*` ones are yours. Cost
-  lives there on purpose: it is priced per vendor, per model, per contract, so
+  lives there on purpose: it's priced per vendor, per model, per contract, so
   OTel declines to standardize it. Conventions for conventional things, your own
   prefix for the rest.
 - **Spans are events; metrics are aggregates.** 300 requests produce 300 spans and
-  8 metric points, and at 300 million requests it is still 8 metric points, because
+  8 metric points, and at 300 million requests it's still 8 metric points, because
   a metric point is one per *attribute combination*, not one per request. (It moves
-  when a combination appears that had not occurred before, which is a bound, not a
+  when a combination appears that hadn't occurred before, which is a bound, not a
   constant.) That ratio is why the rule of thumb is *alert on metrics, debug on
   traces*, and why
   metric attributes are deliberately a smaller set than span attributes: each
@@ -337,7 +337,7 @@ python hands_on/otel_collector.py        # terminal 1: listens on localhost:4318
 python examples/09_otel_export.py --otlp # terminal 2: sends real OTLP
 ```
 
-Terminal 1 prints the spans and metric points that arrived. That is the actual
+Terminal 1 prints the spans and metric points that arrived. That's the actual
 protocol, not a simulation of it. Point the exporter at a real backend instead and
 nothing in the emitting code changes:
 
@@ -347,8 +347,8 @@ python examples/09_otel_export.py --otlp --endpoint http://localhost:4318
 ```
 
 Only the URL and an auth header differ for a vendor. That interchangeability is
-the whole reason the standard exists, and it is why "we emit OpenTelemetry" is a
-decision you can make before you have picked a backend.
+the whole reason the standard exists, and it's why "we emit OpenTelemetry" is a
+decision you can make before you've picked a backend.
 
 ### Four things that will bite you
 
@@ -375,8 +375,8 @@ decision you can make before you have picked a backend.
 
 Instrumentation also rots in a way nothing else in this repo does. Rename an attribute and
 no exception is raised, the spans keep flowing, and every dashboard and alert keyed to the
-old name goes blank with nothing to explain it. That is what
-[tests/test_otel.py](tests/test_otel.py) is for, and it is the test here worth copying
+old name goes blank with nothing to explain it. That's what
+[tests/test_otel.py](tests/test_otel.py) is for, and it's the test here worth copying
 into your own project.
 
 ```bash
@@ -390,14 +390,14 @@ failing on a claim the prose in this section had made three times.
 Its companion, [tests/test_detection.py](tests/test_detection.py), pins the other kind of
 claim: the detection lags, the silent guardrail, and the cluster size that this README and
 the chapter both quote at you. Retuning a detector is allowed; retuning it without updating
-the sentence that quotes it is not. Both suites, plus every example and the OTLP round
+the sentence that quotes it isn't. Both suites, plus every example and the OTLP round
 trip, run on push in [.github/workflows/verify.yml](.github/workflows/verify.yml).
 
 > **OTel is transport, not judgement.** Adopting it replaces §2 and §3 of this repo,
-> writing telemetry down and computing metrics from it yourself. It does not replace §4
+> writing telemetry down and computing metrics from it yourself. It doesn't replace §4
 > through §10. A backend will happily store a million perfectly formed spans and never once
 > tell you that quality drifted. Baselines, drift detection, the sampled judge, alert
-> tuning, and mining failures back into evals are still yours to build or buy. That is the
+> tuning, and mining failures back into evals are still yours to build or buy. That's the
 > honest shape of every "just use the industry tool" upgrade in this series. You buy the
 > plumbing, not the judgement.
 
@@ -422,7 +422,7 @@ The example runs an enterprise-only latency regression that is 15% of traffic. T
 p95 detector stays silent, because the outage hides inside normal noise, while the
 enterprise cohort's own p95 nearly quadruples and alerts. The fix is one line of discipline.
 `metrics.daily_by_segment` computes every series per cohort and you run the same detectors
-on each. There is an honest catch, which the example ends on. Smaller cohorts are noisier,
+on each. There's an honest catch, which the example ends on. Smaller cohorts are noisier,
 so slice on the few dimensions that carry different risk rather than every field you
 log.
 
@@ -433,7 +433,7 @@ the online A/B eval from the Evals dive, run as an operational guardrail. Promot
 the canary clears the control and no guardrail regressed on latency, cost, or refusals.
 
 ### SLOs, error budgets, and trace sampling, for monitoring at real volume
-At scale you cannot judge or store everything. Define an SLO, something like "p95 under
+At scale you can't judge or store everything. Define an SLO, something like "p95 under
 800ms, 99% of the time", and an error budget you spend before you have to stop shipping.
 Sample traces, with head or tail sampling, keeping all the slow and errored ones, to keep
 storage sane. And remember your logs are a PII sink, as Production §3 says, so scrub before
@@ -569,5 +569,5 @@ And the whole series lands in one codebase in the
 [capstone](https://github.com/alexvervloet/deep-dive-capstone): a codebase Q&A tool
 built step by step, one tag per dive.
 
-**You are here: Observability**, the bonus dive that pairs with Production (#8) and
+**You're here: Observability**, the bonus dive that pairs with Production (#8) and
 Evals (#5). Production operates one request; this operates six weeks of them.
