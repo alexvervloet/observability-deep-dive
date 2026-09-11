@@ -1,6 +1,6 @@
 # Exercises: make the learning stick
 
-Reading code teaches you less than *predicting* what it will do and then checking.
+Reading code teaches you less than *predicting* what it'll do and then checking.
 This file turns each section of the [README](README.md) into a few quick
 active-recall prompts: a thing to predict, a thing to change, and a question to
 answer from memory.
@@ -183,7 +183,7 @@ had a thumbs-down attached?
 
 The largest cluster is the mobile app ("app", ~900 failures), the input-drift topic
 the KB can't answer, seen from the other side. And the vast majority of failures had
-*no* feedback at all (≈900 of ~1100). Thumbs are sparse, so you cannot wait for a
+*no* feedback at all (≈900 of ~1100). Thumbs are sparse, so you can't wait for a
 thumbs-down to find failures. You mine proxies (refusals, terse answers) instead.
 </details>
 
@@ -209,7 +209,7 @@ promising SHAP-style attributions. Why be skeptical?
 SHAP/LIME explain a *tabular* model's prediction in terms of its input features, and an
 LLM has no fixed feature vector, just free text. LLM interpretability (probing,
 attention, mechanistic interp) is a research field, not a production practice, and
-attention weights are not feature attributions. The genuinely useful "why did it say
+attention weights aren't feature attributions. The genuinely useful "why did it say
 that?" handles for an LLM app are its *citations* and the retrieved context (the RAG
 dive), not a borrowed tabular technique.
 </details>
@@ -291,7 +291,7 @@ process runs it. This is worth knowing precisely because so much writing about
 OTel (including an earlier draft of this repo) says the batch is simply lost.
 
 Run three: **nothing arrives.** `os._exit()` terminates the process without
-running `atexit` handlers, so the queue dies with it. That is the real shape of
+running `atexit` handlers, so the queue dies with it. That's the real shape of
 the hazard, and the list of things that skip `atexit` is longer than it looks:
 `os._exit`, a SIGKILL, an OOM kill, a container stopped past its grace period, a
 forked worker that never runs the parent's handlers, and SDKs in other languages
@@ -309,15 +309,15 @@ have you made unnecessary, and which are still entirely your problem?
 <details><summary>▸ Answer</summary>
 
 Unnecessary: Sections 2 and 3, writing telemetry down and computing metrics from
-it. A backend does that at any volume, with retention and a query language you did
-not write.
+it. A backend does that at any volume, with retention and a query language you didn't
+write.
 
 Still yours: Sections 4 through 10. Baselines and z-scores, input drift, the
 sampled judge, alert tuning, mining failures into eval cases. A backend stores and
 charts numbers; deciding that this week's numbers are *worse* than last week's, and
 that the difference is worth waking someone for, is judgement, and no wire protocol
 carries it. Some LLM-native platforms sell parts of that judgement layer, which is
-exactly the claim you are now equipped to evaluate rather than take on faith.
+exactly the claim you're now equipped to evaluate rather than take on faith.
 </details>
 
 ---
