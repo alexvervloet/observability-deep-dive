@@ -14,10 +14,10 @@ python-dotenv>=1.0.0,<2
 # mocks, so nothing here is required to complete the repo.
 
 # OpenAI: used when PROVIDER=openai.
-openai>=2.0,<3
+openai>=3.0,<4
 
 # Anthropic: used when PROVIDER=claude.
-anthropic>=0.111.0,<1
+anthropic>=1.0,<2
 
 # --- OpenTelemetry (OPTIONAL: Section 11 only) ---
 # The one section that emits real telemetry instead of analyzing logs. The SDK
