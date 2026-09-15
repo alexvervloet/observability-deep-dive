@@ -309,6 +309,16 @@ Three things the example makes concrete:
   lives there on purpose: it's priced per vendor, per model, per contract, so
   OTel declines to standardize it. Conventions for conventional things, your own
   prefix for the rest.
+
+  Two things about their status, because "semantic convention" sounds more settled
+  than this is. Not one `gen_ai.*` attribute, span, metric, or event is marked
+  Stable; every one of them is still Development. And they moved out of the main
+  semantic-conventions repository in mid-2026 into their own,
+  [open-telemetry/semantic-conventions-genai](https://github.com/open-telemetry/semantic-conventions-genai),
+  so a link or a version bound pointing at the old home now finds nothing. The
+  chat and embedding attributes have been stable enough in practice to build
+  dashboards on; the agent and tool-orchestration ones are still moving, so treat
+  those as provisional and expect a rename.
 - **Spans are events; metrics are aggregates.** 300 requests produce 300 spans and
   8 metric points, and at 300 million requests it's still 8 metric points, because
   a metric point is one per *attribute combination*, not one per request. (It moves
