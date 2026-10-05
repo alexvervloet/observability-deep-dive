@@ -128,10 +128,12 @@ class BaselineClaims(unittest.TestCase):
         z = alerts.signed_z(rows, det)
         center, _ = alerts.baseline_stats([r["value"] for r in z[:BASELINE_DAYS]])
         peak = max(z, key=lambda r: r["z"])
-        # Quoted as "$0.000107, up from a $0.000055 baseline, that's +115sigma".
-        self.assertAlmostEqual(center, 0.000055, places=6)
-        self.assertAlmostEqual(peak["value"], 0.000107, places=6)
-        self.assertAlmostEqual(peak["z"], 115, delta=1)
+        # Quoted as "$0.000050, up from a $0.000023 baseline, that's +150sigma".
+        # Priced at the gpt-6-luna rate; at nano's rate these were $0.000107,
+        # $0.000055 and +115sigma.
+        self.assertAlmostEqual(center, 0.000023, places=6)
+        self.assertAlmostEqual(peak["value"], 0.000050, places=6)
+        self.assertAlmostEqual(peak["z"], 150, delta=1)
 
 
 if __name__ == "__main__":

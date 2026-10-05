@@ -41,9 +41,9 @@ from datetime import datetime, timedelta, timezone
 
 from obs.logs import LogRecord
 
-# USD per 1M tokens (input, output): the gpt-5.4-nano rate, same as the Production
+# USD per 1M tokens (input, output): the gpt-6-luna rate, same as the Production
 # dive prices its mock at, so the dollar figures look like a real small model.
-_PRICE_IN, _PRICE_OUT = 0.20, 1.25
+_PRICE_IN, _PRICE_OUT = 0.10, 0.50
 _MODEL = "acme-support-1"  # the "model" name in the logs; stays fixed even across a silent swap
 
 # --- The knowledge base the assistant can actually answer from --------------
