@@ -544,7 +544,7 @@ def llm_span(tel: Telemetry, *, model: str, provider: str, operation: str = "cha
     Everything above replays logs you already have. This is the other half, and
     the shorter one:
 
-        with otel.llm_span(tel, model="gpt-5.4-nano", provider="openai") as span:
+        with otel.llm_span(tel, model="gpt-6-luna", provider="openai") as span:
             answer = call_the_model(question)
             span.set_attribute("gen_ai.usage.output_tokens", n_tokens)
 
