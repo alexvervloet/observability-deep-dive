@@ -75,7 +75,7 @@ you want the price of the work, undiluted by how often you skipped the work.
 
 **Predict, then run.** `examples/02_baselines_trends.py` prints a z-score for cost
 per request. During the healthy weeks it hovers near zero; once cost creep starts it
-climbs past 100. Why so *huge*, and is a z of 115 a bug?
+climbs past 100. Why so *huge*, and is a z of 150 a bug?
 
 <details><summary>▸ Answer</summary>
 
