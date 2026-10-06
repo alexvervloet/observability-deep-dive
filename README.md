@@ -530,7 +530,7 @@ Run `python check_setup.py` first; it catches most problems. Then, by symptom:
 | `This section needs the OpenTelemetry SDK` | §11 only. `pip install -r requirements.txt` (or the two `opentelemetry-*` packages it lists). Sections 2 through 10 don't import them. |
 | `--otlp` says nothing is listening on `:4318` | Start the receiver first, in another terminal: `python hands_on/otel_collector.py`. |
 | Spans exported, but the backend shows nothing | Two usual causes: the process exited without flushing (call `shutdown()`), or the timestamps are older than the backend's look-back window (§11). |
-| `SyntaxError` / odd type errors on startup | You're likely on Python 3.9 or older; this repo needs 3.10+. `check_setup.py` confirms your version. |
+| `SyntaxError` / odd type errors on startup | You're likely on Python 3.10 or older; this repo needs 3.11+. `check_setup.py` confirms your version. |
 
 Still stuck? Every file is small and self-contained. Open it, read the docstring
 at the top, and run it directly.
