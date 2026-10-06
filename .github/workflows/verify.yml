@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.13"]
+        python-version: ["3.11", "3.13"]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -24,7 +24,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # The repo claims 3.10+. The matrix is where that claim is checked.
+      # The repo claims 3.11+. The matrix is where that claim is checked.
       - run: python check_setup.py
       - run: python -m compileall -q obs examples hands_on tests
 
